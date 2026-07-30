@@ -101,7 +101,6 @@
         function toggleTemplateInput() {
             const opt = getActiveOption();
             document.getElementById('templateLabel').innerText = opt === 'op1' ? "Template OP1 (Mica & Loa):" : "Template OP2 (Mica Full):";
-            // Reset input file khi chuyển option để tránh giữ file cũ
             document.getElementById('templateFile').value = "";
             checkSavedTemplate();
         }
@@ -197,30 +196,27 @@
                 if (mtkVal && mtkVal !== "0") textLines.push("MTK: " + mtkVal);
 
                 if (selectedOption === 'op1') {
-                    // --- OP1: MICA & LOA ---
+                    // --- OP1: MICA & LOA (Chỉ có 1 ô loa dưới bên trái) ---
                     const qrBox1 = { x: 339, y: 367, w: 1132, h: 1132 };
                     const qrBox2 = { x: 1836, y: 369, w: 1127, h: 1126 };
                     const qrBox3 = { x: 266, y: 2532, w: 761, h: 709 };
-                    const qrBox4 = { x: 1763, y: 2532, w: 761, h: 709 };
 
                     drawQRWithBorder(ctx, croppedQR, qrBox1);
                     drawQRWithBorder(ctx, croppedQR, qrBox2);
                     drawQRWithBorder(ctx, croppedQR, qrBox3);
-                    drawQRWithBorder(ctx, croppedQR, qrBox4);
 
                     const textBox1 = { x: 287, y: 1674, w: 1243, h: 348 };
                     const textBox2 = { x: 1765, y: 1653, w: 1286, h: 380 };
                     drawTextBox(ctx, textLines, textBox1, true, 0.95);
                     drawTextBox(ctx, textLines, textBox2, true, 0.95);
 
+                    // 1 khung STK ở dưới bên trái cho loa
                     const textBox3 = { x: 214, y: 3263, w: 870, h: 174 };
-                    const textBox4 = { x: 1711, y: 3263, w: 870, h: 174 };
                     const speakerText = ["STK: " + stkVal];
                     drawTextBox(ctx, speakerText, textBox3, true, 0.95);
-                    drawTextBox(ctx, speakerText, textBox4, true, 0.95);
 
                 } else {
-                    // --- OP2: FULL MICA ---
+                    // --- OP2: FULL MICA (4 ô đầy đủ) ---
                     const qrBox1 = { x: 339, y: 367, w: 1132, h: 1132 };
                     const qrBox2 = { x: 1836, y: 369, w: 1127, h: 1126 };
                     const qrBox3 = { x: 339, y: 2618, w: 1133, h: 1128 };
@@ -318,7 +314,7 @@
             ctx.strokeRect(box.x, box.y, box.w, box.h);
         }
 
-_drawTextBox = function(ctx, lines, box, isBold = true, paddingFactor = 0.95) {
+        function drawTextBox(ctx, lines, box, isBold = true, paddingFactor = 0.95) {
             if (!lines || lines.length === 0) return;
             ctx.fillStyle = "#FF0000"; 
             ctx.textAlign = "center";
@@ -346,8 +342,7 @@ _drawTextBox = function(ctx, lines, box, isBold = true, paddingFactor = 0.95) {
             for (let i = 0; i < lines.length; i++) {
                 ctx.fillText(lines[i], centerX, startY + (i * lineHeight));
             }
-        };
-        const drawTextBox = _drawTextBox;
+        }
 
         function downloadPDF() {
             const canvas = document.getElementById('resultCanvas');
