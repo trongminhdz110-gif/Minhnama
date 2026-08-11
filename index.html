@@ -196,7 +196,7 @@
                 if (mtkVal && mtkVal !== "0") textLines.push("MTK: " + mtkVal);
 
                 if (selectedOption === 'op1') {
-                    // --- OP1: MICA & LOA (Chỉ có 1 ô loa dưới bên trái) ---
+                    // --- OP1: MICA & LOA ---
                     const qrBox1 = { x: 339, y: 367, w: 1132, h: 1132 };
                     const qrBox2 = { x: 1836, y: 369, w: 1127, h: 1126 };
                     const qrBox3 = { x: 266, y: 2532, w: 761, h: 709 };
@@ -210,13 +210,12 @@
                     drawTextBox(ctx, textLines, textBox1, true, 0.95);
                     drawTextBox(ctx, textLines, textBox2, true, 0.95);
 
-                    // 1 khung STK ở dưới bên trái cho loa
                     const textBox3 = { x: 214, y: 3263, w: 870, h: 174 };
                     const speakerText = ["STK: " + stkVal];
                     drawTextBox(ctx, speakerText, textBox3, true, 0.95);
 
                 } else {
-                    // --- OP2: FULL MICA (4 ô đầy đủ) ---
+                    // --- OP2: FULL MICA ---
                     const qrBox1 = { x: 339, y: 367, w: 1132, h: 1132 };
                     const qrBox2 = { x: 1836, y: 369, w: 1127, h: 1126 };
                     const qrBox3 = { x: 339, y: 2618, w: 1133, h: 1128 };
@@ -314,16 +313,37 @@
             ctx.strokeRect(box.x, box.y, box.w, box.h);
         }
 
-        function drawTextBox(ctx, lines, box, isBold = true, paddingFactor = 0.95) {
-            if (!lines || lines.length === 0) return;
+        // Hàm vẽ chữ thông minh: Tự động xuống dòng khi chữ dài để không bị co nhỏ
+        function drawTextBox(ctx, rawLines, box, isBold = true, paddingFactor = 0.95) {
+            if (!rawLines || rawLines.length === 0) return;
             ctx.fillStyle = "#FF0000"; 
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
 
-            let fontSize = box.h / (lines.length * 1.1);
+            let fontStyle = `${isBold ? 'bold' : 'normal'}`;
+            let testFontSize = 60;
+            ctx.font = `${fontStyle} ${testFontSize}px Arial`;
             
+            let lines = [];
+            for (let item of rawLines) {
+                let words = item.split(' ');
+                let currentLine = words[0];
+                for (let i = 1; i < words.length; i++) {
+                    let testLine = currentLine + " " + words[i];
+                    let metrics = ctx.measureText(testLine);
+                    if (metrics.width * (100 / testFontSize) <= box.w * 0.95) {
+                        currentLine = testLine;
+                    } else {
+                        lines.push(currentLine);
+                        currentLine = words[i];
+                    }
+                }
+                lines.push(currentLine);
+            }
+
+            let fontSize = box.h / (lines.length * 1.1);
             for (let line of lines) {
-                ctx.font = `${isBold ? 'bold' : 'normal'} 100px Arial`;
+                ctx.font = `${fontStyle} 100px Arial`;
                 let metrics = ctx.measureText(line);
                 let scaleW = (box.w * 0.95) / (metrics.width / 100);
                 if (scaleW < fontSize) {
@@ -331,9 +351,9 @@
                 }
             }
             
-            fontSize = Math.max(40, Math.min(fontSize, box.h / lines.length)) * paddingFactor;
+            fontSize = Math.max(35, Math.min(fontSize, box.h / lines.length)) * paddingFactor;
 
-            ctx.font = `${isBold ? 'bold' : 'normal'} ${fontSize}px Arial`;
+            ctx.font = `${fontStyle} ${fontSize}px Arial`;
             let lineHeight = fontSize * 1.15;
             let totalHeight = lines.length * lineHeight;
             let startY = box.y + (box.h / 2) - (totalHeight / 2) + (lineHeight / 2);
