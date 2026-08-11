@@ -2,160 +2,126 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Phần Mềm Tạo Bảng Mica VietQR</title>
+    <title>Tạo Bảng Mica VietQR - Full</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
-<body class="bg-gray-100 min-h-screen p-6">
-    <div class="max-w-xl mx-auto bg-white p-6 rounded-2xl shadow-lg border border-gray-100">
-        <h1 class="text-2xl font-extrabold text-gray-800 mb-6 text-center">Tạo Bảng Mica VietQR (Bản đầy đủ)</h1>
+<body class="bg-gray-100 p-6">
+    <div class="max-w-xl mx-auto bg-white p-6 rounded-2xl shadow-lg">
+        <h1 class="text-xl font-bold mb-4 text-center">Công Cụ Tạo Bảng Mica</h1>
         
-        <!-- Cấu hình thiết kế -->
-        <div class="mb-4 p-4 bg-blue-50/60 rounded-xl border border-blue-100">
-            <label class="block text-gray-700 font-bold mb-2">Chọn loại thiết kế:</label>
-            <div class="flex gap-6">
-                <label class="flex items-center cursor-pointer">
-                    <input type="radio" name="optionType" value="op1" checked onchange="toggleTemplateInput()" class="mr-2 w-4 h-4 text-blue-600">
-                    <span class="font-medium text-blue-900">OP1: Bảng MICA & Loa</span>
-                </label>
-                <label class="flex items-center cursor-pointer">
-                    <input type="radio" name="optionType" value="op2" onchange="toggleTemplateInput()" class="mr-2 w-4 h-4 text-blue-600">
-                    <span class="font-medium text-blue-900">OP2: Bảng MICA FULL</span>
-                </label>
+        <!-- Input fields -->
+        <div class="space-y-4">
+            <div>
+                <label class="block font-semibold">Chọn Loại:</label>
+                <select id="optionType" onchange="toggleTemplateInput()" class="w-full border p-2 rounded">
+                    <option value="op1">OP1: Bảng MICA & Loa</option>
+                    <option value="op2">OP2: Bảng MICA FULL</option>
+                </select>
             </div>
+            <div>
+                <label class="block font-semibold">CTK:</label>
+                <input type="text" id="ctk" class="w-full border p-2 rounded uppercase" oninput="this.value = this.value.toUpperCase()">
+            </div>
+            <div>
+                <label class="block font-semibold">STK:</label>
+                <input type="text" id="stk" class="w-full border p-2 rounded">
+            </div>
+            <div>
+                <label class="block font-semibold">MTK (để 0 nếu ẩn):</label>
+                <input type="text" id="mtk" value="0" class="w-full border p-2 rounded">
+            </div>
+            <input type="file" id="templateFile" accept="image/*" onchange="saveTemplate(event)" class="w-full text-sm">
         </div>
 
-        <div class="mb-4">
-            <label class="block text-gray-700 font-semibold mb-1">Chọn Ngân hàng:</label>
-            <select id="bankBin" class="w-full border border-gray-300 p-2.5 rounded-lg bg-white">
-                <option value="970428" selected>Nam A Bank</option>
-                <option value="970436">Vietcombank</option>
-                <option value="970407">Techcombank</option>
-                <option value="970422">MB Bank</option>
-            </select>
-        </div>
-
-        <div class="mb-4">
-            <label class="block text-gray-700 font-semibold mb-1">Tên chủ tài khoản:</label>
-            <input type="text" id="ctk" class="w-full border border-gray-300 p-2.5 rounded-lg uppercase" oninput="this.value = this.value.toUpperCase()">
-        </div>
-        <div class="mb-4">
-            <label class="block text-gray-700 font-semibold mb-1">Số tài khoản:</label>
-            <input type="text" id="stk" class="w-full border border-gray-300 p-2.5 rounded-lg uppercase">
-        </div>
-        <div class="mb-4">
-            <label class="block text-gray-700 font-semibold mb-1">Mã tài khoản (nhập 0 để ẩn):</label>
-            <input type="text" id="mtk" value="0" class="w-full border border-gray-300 p-2.5 rounded-lg uppercase">
-        </div>
-
-        <div class="mb-6 p-4 bg-gray-50 rounded-xl border border-dashed border-gray-300">
-            <label class="text-sm font-semibold text-gray-600 mb-2 block" id="templateLabel">Chọn File Template:</label>
-            <input type="file" id="templateFile" accept="image/*" onchange="saveTemplate(event)" class="w-full text-sm text-gray-500">
-        </div>
-
-        <button id="actionBtn" onclick="processImage()" class="w-full bg-blue-600 text-white font-bold p-3 rounded-xl hover:bg-blue-700 transition">Tạo Mã QR & Ghép Thiết Kế</button>
+        <button onclick="generate()" class="w-full bg-blue-600 text-white font-bold p-3 mt-4 rounded hover:bg-blue-700">Tạo Ảnh & PDF</button>
 
         <div class="mt-6 text-center">
-            <canvas id="resultCanvas" class="border border-gray-200 max-w-full mx-auto rounded-lg shadow-sm hidden"></canvas>
-            <div class="mt-4 flex justify-center gap-3">
-                <a id="downloadBtn" class="bg-emerald-600 text-white font-bold px-5 py-2.5 rounded-xl hidden" download="bang-mica.jpg">Tải ảnh</a>
+            <canvas id="resultCanvas" class="hidden"></canvas>
+            <div class="flex gap-2 justify-center mt-4">
+                <a id="downloadJpg" class="bg-green-600 text-white px-4 py-2 rounded hidden" download="bang-mica.jpg">Tải JPG</a>
+                <button id="downloadPdf" onclick="downloadPDF()" class="bg-red-600 text-white px-4 py-2 rounded hidden">Tải PDF</button>
             </div>
         </div>
     </div>
 
     <script>
-        // --- CẤU HÌNH KÍCH THƯỚC CỐ ĐỊNH ---
         const SIZE_CTK = 65; 
         const SIZE_STK = 50;
 
-        // Hàm vẽ chữ CỐ ĐỊNH, KHÔNG CO GIÃN
-        function drawFixedText(ctx, text, x, y, size, isBold = true) {
+        function drawFixedText(ctx, text, x, y, size) {
             ctx.fillStyle = "#FF0000";
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
-            ctx.font = `${isBold ? 'bold' : 'normal'} ${size}px Arial`;
+            ctx.font = `bold ${size}px Arial`;
             ctx.fillText(text, x, y);
         }
 
-        // Hàm chính xử lý tạo ảnh
-        async function processImage() {
-            const selectedOption = document.querySelector('input[name="optionType"]:checked').value;
-            const ctkVal = document.getElementById('ctk').value.trim();
-            const stkVal = document.getElementById('stk').value.trim();
-            const mtkVal = document.getElementById('mtk').value.trim();
+        async function generate() {
+            const opt = document.getElementById('optionType').value;
+            const ctk = document.getElementById('ctk').value.trim();
+            const stk = document.getElementById('stk').value.trim();
+            const mtk = document.getElementById('mtk').value.trim();
+            const template = localStorage.getItem('template_' + opt);
+
+            if(!template) { alert("Chưa chọn file template!"); return; }
+
+            const vietqrUrl = `https://img.vietqr.io/image/970428-${stk}-compact.png?accountName=${encodeURIComponent(ctk)}`;
             
-            if(!ctkVal || !stkVal) { alert("Nhập đủ CTK và STK!"); return; }
+            const [qrImg, tempImg] = await Promise.all([
+                loadImg(vietqrUrl),
+                loadImg(template)
+            ]);
 
-            let templateDataUrl = localStorage.getItem('template_' + selectedOption);
-            if (!templateDataUrl) { alert("Vui lòng chọn file template!"); return; }
+            const canvas = document.getElementById('resultCanvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = tempImg.width;
+            canvas.height = tempImg.height;
+            ctx.drawImage(tempImg, 0, 0);
 
-            const vietqrUrl = `https://img.vietqr.io/image/${document.getElementById('bankBin').value}-${stkVal}-compact.png?accountName=${encodeURIComponent(ctkVal)}`;
+            const boxes = opt === 'op1' ? 
+                [ {x: 339, y: 367, w: 1132, h: 1132}, {x: 1836, y: 369, w: 1127, h: 1126}, {x: 266, y: 2532, w: 761, h: 709} ] :
+                [ {x: 339, y: 367, w: 1132, h: 1132}, {x: 1836, y: 369, w: 1127, h: 1126}, {x: 339, y: 2618, w: 1133, h: 1128}, {x: 1835, y: 2623, w: 1135, h: 1128} ];
 
-            const btn = document.getElementById('actionBtn');
-            btn.disabled = true; btn.innerText = "Đang xử lý...";
+            const textBoxes = opt === 'op1' ? 
+                [ {x: 287, y: 1674, w: 1243, h: 348}, {x: 1765, y: 1653, w: 1286, h: 380}, {x: 214, y: 3263, w: 870, h: 174} ] :
+                [ {x: 287, y: 1674, w: 1243, h: 348}, {x: 1765, y: 1653, w: 1286, h: 380}, {x: 272, y: 3913, w: 1280, h: 361}, {x: 1771, y: 3920, w: 1286, h: 344} ];
 
-            try {
-                const [rawQrImg, templateImg] = await Promise.all([
-                    loadNetworkImage(vietqrUrl),
-                    loadImageFromDataURL(templateDataUrl)
-                ]);
+            // Vẽ QR
+            const cropped = cropQR(qrImg);
+            boxes.forEach(b => ctx.drawImage(cropped, b.x, b.y, b.w, b.h));
 
-                const canvas = document.getElementById('resultCanvas');
-                const ctx = canvas.getContext('2d');
-                canvas.width = templateImg.width;
-                canvas.height = templateImg.height;
-                canvas.classList.remove('hidden');
-                ctx.drawImage(templateImg, 0, 0);
+            // Vẽ Text (Cố định vị trí)
+            textBoxes.forEach(b => {
+                let midX = b.x + b.w/2;
+                let midY = b.y + b.h/2;
+                drawFixedText(ctx, "CTK: " + ctk, midX, midY - 50, SIZE_CTK);
+                let stkStr = "STK: " + stk;
+                if(mtk && mtk !== "0") stkStr += " - MTK: " + mtk;
+                drawFixedText(ctx, stkStr, midX, midY + 50, SIZE_STK);
+            });
 
-                // Tọa độ Box QR (giữ nguyên theo yêu cầu cũ)
-                const boxes = selectedOption === 'op1' ? 
-                    [ {x: 339, y: 367, w: 1132, h: 1132}, {x: 1836, y: 369, w: 1127, h: 1126}, {x: 266, y: 2532, w: 761, h: 709} ] :
-                    [ {x: 339, y: 367, w: 1132, h: 1132}, {x: 1836, y: 369, w: 1127, h: 1126}, {x: 339, y: 2618, w: 1133, h: 1128}, {x: 1835, y: 2623, w: 1135, h: 1128} ];
-
-                // Tọa độ Box Text tương ứng
-                const textBoxes = selectedOption === 'op1' ? 
-                    [ {x: 287, y: 1674, w: 1243, h: 348}, {x: 1765, y: 1653, w: 1286, h: 380}, {x: 214, y: 3263, w: 870, h: 174} ] :
-                    [ {x: 287, y: 1674, w: 1243, h: 348}, {x: 1765, y: 1653, w: 1286, h: 380}, {x: 272, y: 3913, w: 1280, h: 361}, {x: 1771, y: 3920, w: 1286, h: 344} ];
-
-                // Vẽ QR
-                const croppedQR = cropPureQR(rawQrImg);
-                boxes.forEach(box => {
-                    ctx.drawImage(croppedQR, box.x, box.y, box.w, box.h);
-                });
-
-                // Vẽ Text
-                textBoxes.forEach(box => {
-                    let centerX = box.x + box.w / 2;
-                    let centerY = box.y + box.h / 2;
-                    
-                    // Vẽ CTK (nằm ở nửa trên của box text)
-                    drawFixedText(ctx, "CTK: " + ctkVal, centerX, centerY - 50, SIZE_CTK);
-                    
-                    // Vẽ STK/MTK (nằm ở nửa dưới của box text)
-                    let stkText = "STK: " + stkVal;
-                    if(mtkVal && mtkVal !== "0") stkText += " - MTK: " + mtkVal;
-                    drawFixedText(ctx, stkText, centerX, centerY + 50, SIZE_STK);
-                });
-
-                document.getElementById('downloadBtn').href = canvas.toDataURL("image/jpeg", 0.95);
-                document.getElementById('downloadBtn').classList.remove('hidden');
-            } catch (e) { alert("Lỗi khi tạo ảnh!"); console.error(e); } 
-            finally { btn.disabled = false; btn.innerText = "Tạo Mã QR & Ghép Thiết Kế"; }
+            document.getElementById('downloadJpg').href = canvas.toDataURL("image/jpeg", 0.95);
+            document.getElementById('downloadJpg').classList.remove('hidden');
+            document.getElementById('downloadPdf').classList.remove('hidden');
         }
 
-        // --- CÁC HÀM HỖ TRỢ ---
-        function loadNetworkImage(url) { return new Promise((res) => { const i = new Image(); i.crossOrigin = "Anonymous"; i.onload = () => res(i); i.src = url; }); }
-        function loadImageFromDataURL(dataUrl) { return new Promise((res) => { const i = new Image(); i.onload = () => res(i); i.src = dataUrl; }); }
-        function saveTemplate(e) { const r = new FileReader(); r.onload = (e) => localStorage.setItem('template_' + document.querySelector('input[name="optionType"]:checked').value, e.target.result); r.readAsDataURL(e.target.files[0]); }
-        function cropPureQR(img) {
-            const size = Math.min(img.width, img.height) * 0.72;
+        function downloadPDF() {
+            const canvas = document.getElementById('resultCanvas');
+            const pdf = new jsPDF({orientation: 'p', unit: 'mm', format: [190, 190 * (canvas.height/canvas.width)]});
+            pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, 190, 190 * (canvas.height/canvas.width));
+            pdf.save('bang-mica.pdf');
+        }
+
+        function loadImg(src) { return new Promise(res => { const i = new Image(); i.crossOrigin = "Anonymous"; i.onload = () => res(i); i.src = src; }); }
+        function saveTemplate(e) { const r = new FileReader(); r.onload = (e) => localStorage.setItem('template_' + document.getElementById('optionType').value, e.target.result); r.readAsDataURL(e.target.files[0]); }
+        function cropQR(img) {
+            const s = Math.min(img.width, img.height) * 0.72;
             const c = document.createElement('canvas'); const ctx = c.getContext('2d');
-            c.width = c.height = size;
-            ctx.drawImage(img, (img.width-size)/2, img.height*0.14, size, size, 0, 0, size, size);
+            c.width = c.height = s;
+            ctx.drawImage(img, (img.width-s)/2, img.height*0.14, s, s, 0, 0, s, s);
             return c;
         }
-        function toggleTemplateInput() { document.getElementById('templateLabel').innerText = document.querySelector('input[name="optionType"]:checked').value === 'op1' ? "Template OP1 (Mica & Loa):" : "Template OP2 (Mica Full):"; }
     </script>
 </body>
 </html>
