@@ -9,15 +9,11 @@
 </head>
 <body class="bg-gray-100 min-h-screen p-6">
     <div class="max-w-xl mx-auto bg-white p-6 rounded-2xl shadow-lg border border-gray-100">
-        <h1 class="text-2xl font-extrabold text-gray-800 mb-6 text-center">Tạo Bảng Mica VietQR (Cấu hình cố định)</h1>
+        <h1 class="text-2xl font-extrabold text-gray-800 mb-6 text-center">Tạo Bảng Mica VietQR (Bản đầy đủ)</h1>
         
-        <!-- CẤU HÌNH KÍCH THƯỚC CHỮ Ở DƯỚI ĐÂY -->
-        <div class="mb-4 p-4 bg-yellow-50 rounded-lg text-sm text-yellow-800 border border-yellow-200">
-            <p>💡 <b>Mẹo:</b> Bạn có thể chỉnh kích thước chữ ngay trong mã nguồn (tìm biến <code>SIZE_CTK</code> và <code>SIZE_STK</code>).</p>
-        </div>
-
+        <!-- Cấu hình thiết kế -->
         <div class="mb-4 p-4 bg-blue-50/60 rounded-xl border border-blue-100">
-            <label class="block text-gray-700 font-bold mb-2">Chọn loại thiết kế (Option):</label>
+            <label class="block text-gray-700 font-bold mb-2">Chọn loại thiết kế:</label>
             <div class="flex gap-6">
                 <label class="flex items-center cursor-pointer">
                     <input type="radio" name="optionType" value="op1" checked onchange="toggleTemplateInput()" class="mr-2 w-4 h-4 text-blue-600">
@@ -54,10 +50,11 @@
         </div>
 
         <div class="mb-6 p-4 bg-gray-50 rounded-xl border border-dashed border-gray-300">
+            <label class="text-sm font-semibold text-gray-600 mb-2 block" id="templateLabel">Chọn File Template:</label>
             <input type="file" id="templateFile" accept="image/*" onchange="saveTemplate(event)" class="w-full text-sm text-gray-500">
         </div>
 
-        <button id="actionBtn" onclick="processImage()" class="w-full bg-blue-600 text-white font-bold p-3 rounded-xl hover:bg-blue-700">Tạo Mã QR</button>
+        <button id="actionBtn" onclick="processImage()" class="w-full bg-blue-600 text-white font-bold p-3 rounded-xl hover:bg-blue-700 transition">Tạo Mã QR & Ghép Thiết Kế</button>
 
         <div class="mt-6 text-center">
             <canvas id="resultCanvas" class="border border-gray-200 max-w-full mx-auto rounded-lg shadow-sm hidden"></canvas>
@@ -69,9 +66,10 @@
 
     <script>
         // --- CẤU HÌNH KÍCH THƯỚC CỐ ĐỊNH ---
-        const SIZE_CTK = 65;  // Cỡ chữ dòng Tên
-        const SIZE_STK = 50;  // Cỡ chữ dòng STK/MTK
+        const SIZE_CTK = 65; 
+        const SIZE_STK = 50;
 
+        // Hàm vẽ chữ CỐ ĐỊNH, KHÔNG CO GIÃN
         function drawFixedText(ctx, text, x, y, size, isBold = true) {
             ctx.fillStyle = "#FF0000";
             ctx.textAlign = "center";
@@ -80,73 +78,84 @@
             ctx.fillText(text, x, y);
         }
 
+        // Hàm chính xử lý tạo ảnh
         async function processImage() {
             const selectedOption = document.querySelector('input[name="optionType"]:checked').value;
             const ctkVal = document.getElementById('ctk').value.trim();
             const stkVal = document.getElementById('stk').value.trim();
             const mtkVal = document.getElementById('mtk').value.trim();
             
+            if(!ctkVal || !stkVal) { alert("Nhập đủ CTK và STK!"); return; }
+
             let templateDataUrl = localStorage.getItem('template_' + selectedOption);
-            if (!templateDataUrl) { alert("Vui lòng chọn file mẫu!"); return; }
+            if (!templateDataUrl) { alert("Vui lòng chọn file template!"); return; }
 
             const vietqrUrl = `https://img.vietqr.io/image/${document.getElementById('bankBin').value}-${stkVal}-compact.png?accountName=${encodeURIComponent(ctkVal)}`;
 
-            const [rawQrImg, templateImg] = await Promise.all([
-                loadNetworkImage(vietqrUrl),
-                loadImageFromDataURL(templateDataUrl)
-            ]);
+            const btn = document.getElementById('actionBtn');
+            btn.disabled = true; btn.innerText = "Đang xử lý...";
 
-            const canvas = document.getElementById('resultCanvas');
-            const ctx = canvas.getContext('2d');
-            canvas.width = templateImg.width;
-            canvas.height = templateImg.height;
-            canvas.classList.remove('hidden');
-            ctx.drawImage(templateImg, 0, 0);
+            try {
+                const [rawQrImg, templateImg] = await Promise.all([
+                    loadNetworkImage(vietqrUrl),
+                    loadImageFromDataURL(templateDataUrl)
+                ]);
 
-            // Các tọa độ box (giữ nguyên theo yêu cầu cũ của bạn)
-            const boxes = selectedOption === 'op1' ? 
-                [ {x: 287, y: 1674, w: 1243, h: 348}, {x: 1765, y: 1653, w: 1286, h: 380}, {x: 214, y: 3263, w: 870, h: 174} ] :
-                [ {x: 287, y: 1674, w: 1243, h: 348}, {x: 1765, y: 1653, w: 1286, h: 380}, {x: 272, y: 3913, w: 1280, h: 361}, {x: 1771, y: 3920, w: 1286, h: 344} ];
+                const canvas = document.getElementById('resultCanvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = templateImg.width;
+                canvas.height = templateImg.height;
+                canvas.classList.remove('hidden');
+                ctx.drawImage(templateImg, 0, 0);
 
-            // Vẽ QR (Logic cũ)
-            const croppedQR = cropPureQR(rawQrImg);
-            // ... (bỏ qua đoạn vẽ QR để gọn code, bạn giữ nguyên logic vẽ QR cũ của bạn) ...
+                // Tọa độ Box QR (giữ nguyên theo yêu cầu cũ)
+                const boxes = selectedOption === 'op1' ? 
+                    [ {x: 339, y: 367, w: 1132, h: 1132}, {x: 1836, y: 369, w: 1127, h: 1126}, {x: 266, y: 2532, w: 761, h: 709} ] :
+                    [ {x: 339, y: 367, w: 1132, h: 1132}, {x: 1836, y: 369, w: 1127, h: 1126}, {x: 339, y: 2618, w: 1133, h: 1128}, {x: 1835, y: 2623, w: 1135, h: 1128} ];
 
-            // --- VẼ TEXT CỐ ĐỊNH ---
-            boxes.forEach((box, index) => {
-                let centerX = box.x + box.w / 2;
-                let centerY = box.y + box.h / 2;
-                
-                // Dòng 1: CTK (nằm ở 1/3 phía trên của box)
-                drawFixedText(ctx, "CTK: " + ctkVal, centerX, centerY - 40, SIZE_CTK);
-                
-                // Dòng 2: STK (nằm ở 1/3 phía dưới của box)
-                let stkText = "STK: " + stkVal;
-                if(mtkVal && mtkVal !== "0") stkText += " - MTK: " + mtkVal;
-                drawFixedText(ctx, stkText, centerX, centerY + 40, SIZE_STK);
-            });
+                // Tọa độ Box Text tương ứng
+                const textBoxes = selectedOption === 'op1' ? 
+                    [ {x: 287, y: 1674, w: 1243, h: 348}, {x: 1765, y: 1653, w: 1286, h: 380}, {x: 214, y: 3263, w: 870, h: 174} ] :
+                    [ {x: 287, y: 1674, w: 1243, h: 348}, {x: 1765, y: 1653, w: 1286, h: 380}, {x: 272, y: 3913, w: 1280, h: 361}, {x: 1771, y: 3920, w: 1286, h: 344} ];
 
-            document.getElementById('downloadBtn').href = canvas.toDataURL("image/jpeg", 0.95);
-            document.getElementById('downloadBtn').classList.remove('hidden');
+                // Vẽ QR
+                const croppedQR = cropPureQR(rawQrImg);
+                boxes.forEach(box => {
+                    ctx.drawImage(croppedQR, box.x, box.y, box.w, box.h);
+                });
+
+                // Vẽ Text
+                textBoxes.forEach(box => {
+                    let centerX = box.x + box.w / 2;
+                    let centerY = box.y + box.h / 2;
+                    
+                    // Vẽ CTK (nằm ở nửa trên của box text)
+                    drawFixedText(ctx, "CTK: " + ctkVal, centerX, centerY - 50, SIZE_CTK);
+                    
+                    // Vẽ STK/MTK (nằm ở nửa dưới của box text)
+                    let stkText = "STK: " + stkVal;
+                    if(mtkVal && mtkVal !== "0") stkText += " - MTK: " + mtkVal;
+                    drawFixedText(ctx, stkText, centerX, centerY + 50, SIZE_STK);
+                });
+
+                document.getElementById('downloadBtn').href = canvas.toDataURL("image/jpeg", 0.95);
+                document.getElementById('downloadBtn').classList.remove('hidden');
+            } catch (e) { alert("Lỗi khi tạo ảnh!"); console.error(e); } 
+            finally { btn.disabled = false; btn.innerText = "Tạo Mã QR & Ghép Thiết Kế"; }
         }
 
         // --- CÁC HÀM HỖ TRỢ ---
-        function loadNetworkImage(url) {
-            return new Promise((resolve) => {
-                const img = new Image();
-                img.crossOrigin = "Anonymous";
-                img.onload = () => resolve(img);
-                img.src = url;
-            });
+        function loadNetworkImage(url) { return new Promise((res) => { const i = new Image(); i.crossOrigin = "Anonymous"; i.onload = () => res(i); i.src = url; }); }
+        function loadImageFromDataURL(dataUrl) { return new Promise((res) => { const i = new Image(); i.onload = () => res(i); i.src = dataUrl; }); }
+        function saveTemplate(e) { const r = new FileReader(); r.onload = (e) => localStorage.setItem('template_' + document.querySelector('input[name="optionType"]:checked').value, e.target.result); r.readAsDataURL(e.target.files[0]); }
+        function cropPureQR(img) {
+            const size = Math.min(img.width, img.height) * 0.72;
+            const c = document.createElement('canvas'); const ctx = c.getContext('2d');
+            c.width = c.height = size;
+            ctx.drawImage(img, (img.width-size)/2, img.height*0.14, size, size, 0, 0, size, size);
+            return c;
         }
-        function loadImageFromDataURL(dataUrl) { return new Promise((resolve) => { const img = new Image(); img.onload = () => resolve(img); img.src = dataUrl; }); }
-        function saveTemplate(event) {
-            const reader = new FileReader();
-            reader.onload = (e) => localStorage.setItem('template_' + document.querySelector('input[name="optionType"]:checked').value, e.target.result);
-            reader.readAsDataURL(event.target.files[0]);
-        }
-        function cropPureQR(img) { /* Giữ nguyên hàm cũ */ return img; }
-        function toggleTemplateInput() { /* Giữ nguyên hàm cũ */ }
+        function toggleTemplateInput() { document.getElementById('templateLabel').innerText = document.querySelector('input[name="optionType"]:checked').value === 'op1' ? "Template OP1 (Mica & Loa):" : "Template OP2 (Mica Full):"; }
     </script>
 </body>
 </html>
