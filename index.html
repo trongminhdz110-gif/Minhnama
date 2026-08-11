@@ -313,62 +313,60 @@
             ctx.strokeRect(box.x, box.y, box.w, box.h);
         }
 
-        // Hàm vẽ chữ: Căn lề trái, tràn đầy chiều ngang khung xanh
-        function drawTextBox(ctx, rawLines, box, isBold = true, paddingFactor = 0.98) {
-            if (!rawLines || rawLines.length === 0) return;
-            ctx.fillStyle = "#FF0000"; 
-            ctx.textBaseline = "middle";
+        // Hàm vẽ chữ: Tự động tối ưu cỡ chữ để lấp đầy khung, tự ngắt dòng khi cần
+function drawTextBox(ctx, rawLines, box, isBold = true) {
+    ctx.fillStyle = "#FF0000";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
 
-            let fontStyle = `${isBold ? 'bold' : 'normal'}`;
-            let testFontSize = 60;
-            ctx.font = `${fontStyle} ${testFontSize}px Arial`;
-            
-            let availableWidth = box.w * 0.96; // Tràn đều sát hai biên trái phải
-            let startX = box.x + (box.w * 0.02); // Căn lề trái có lề nhẹ
+    let fontSize = 120; // Bắt đầu với cỡ chữ lớn
+    let wrappedLines = [];
+    let bestFontSize = 30; // Cỡ chữ tối thiểu
+    let finalLines = [];
 
-            let lines = [];
-            for (let item of rawLines) {
-                let words = item.split(' ');
-                let currentLine = words[0];
-                for (let i = 1; i < words.length; i++) {
-                    let testLine = currentLine + " " + words[i];
-                    let metrics = ctx.measureText(testLine);
-                    if (metrics.width * (100 / testFontSize) <= availableWidth) {
-                        currentLine = testLine;
-                    } else {
-                        lines.push(currentLine);
-                        currentLine = words[i];
-                    }
-                }
-                lines.push(currentLine);
-            }
+    // Thuật toán: Thử giảm dần font size cho đến khi toàn bộ đoạn văn vừa khít khung
+    while (fontSize > 20) {
+        ctx.font = `${isBold ? 'bold' : 'normal'} ${fontSize}px Arial`;
+        wrappedLines = [];
+        let maxWidth = box.w * 0.95; // Dùng 95% chiều rộng để chữ không bị sát mép khung
 
-            // Tính toán kích thước chữ tối ưu theo chiều ngang và dọc
-            let maxLineLength = 0;
-            for (let line of lines) {
-                ctx.font = `${fontStyle} 100px Arial`;
-                let metrics = ctx.measureText(line);
-                if (metrics.width > maxLineLength) {
-                    maxLineLength = metrics.width;
+        // Chia dòng dựa trên maxWidth
+        for (let line of rawLines) {
+            let words = line.split(' ');
+            let currentLine = words[0];
+            for (let i = 1; i < words.length; i++) {
+                if (ctx.measureText(currentLine + " " + words[i]).width < maxWidth) {
+                    currentLine += " " + words[i];
+                } else {
+                    wrappedLines.push(currentLine);
+                    currentLine = words[i];
                 }
             }
-
-            let fontSizeByWidth = (availableWidth / (maxLineLength / 100));
-            let fontSizeByHeight = box.h / (lines.length * 1.15);
-            let fontSize = Math.min(fontSizeByWidth, fontSizeByHeight) * paddingFactor;
-            fontSize = Math.max(30, fontSize);
-
-            ctx.font = `${fontStyle} ${fontSize}px Arial`;
-            ctx.textAlign = "left"; // Căn lề trái
-
-            let lineHeight = fontSize * 1.2;
-            let totalHeight = lines.length * lineHeight;
-            let startY = box.y + (box.h / 2) - (totalHeight / 2) + (lineHeight / 2);
-
-            for (let i = 0; i < lines.length; i++) {
-                ctx.fillText(lines[i], startX, startY + (i * lineHeight));
-            }
+            wrappedLines.push(currentLine);
         }
+
+        // Kiểm tra chiều cao tổng thể xem có lọt vào box không
+        let lineHeight = fontSize * 1.25;
+        if (wrappedLines.length * lineHeight <= box.h * 0.95) {
+            bestFontSize = fontSize;
+            finalLines = wrappedLines;
+            break; // Tìm được cỡ chữ lớn nhất mà vẫn vừa khung
+        }
+        fontSize -= 2; // Giảm dần font size nếu không vừa
+    }
+
+    // Vẽ text
+    ctx.font = `${isBold ? 'bold' : 'normal'} ${bestFontSize}px Arial`;
+    let lineHeight = bestFontSize * 1.25;
+    
+    // Tính toán lại vị trí Y để căn giữa khối text trong box
+    let startY = box.y + (box.h / 2) - ((finalLines.length - 1) * lineHeight / 2);
+    let centerX = box.x + box.w / 2;
+
+    for (let i = 0; i < finalLines.length; i++) {
+        ctx.fillText(finalLines[i], centerX, startY + (i * lineHeight));
+    }
+}
 
         function downloadPDF() {
             const canvas = document.getElementById('resultCanvas');
