@@ -137,7 +137,6 @@
             }
         }
 
-        // --- HÀM TÌM KIẾM KEY THÔNG MINH TRONG EXCEL ---
         function getExcelVal(row, keys) {
             const rowKeys = Object.keys(row);
             for (let rk of rowKeys) {
@@ -152,7 +151,6 @@
             return '';
         }
 
-        // --- XỬ LÝ HÀNG LOẠT (EXCEL - OPTION 3) ---
         async function processExcel() {
             const fileInput = document.getElementById('excelFile');
             if (!fileInput.files.length) { alert("Vui lòng chọn file Excel!"); return; }
@@ -182,11 +180,8 @@
                         if (!stk || !ten) continue;
 
                         let bankBin = detectBankBin(nganHang);
-                        
-                        // Sử dụng định dạng chuẩn (không có compact) để hiển thị tên chủ tài khoản trực tiếp trên ảnh QR
                         let url = `https://img.vietqr.io/image/${bankBin}-${stk}.png?accountName=${encodeURIComponent(ten)}`;
                         
-                        // Làm sạch số tiền (loại bỏ dấu phẩy, chấm, ký tự chữ đ, vnđ...)
                         if (rawTien !== undefined && rawTien !== null && rawTien !== '') {
                             let cleanTien = String(rawTien).replace(/[^0-9]/g, '');
                             if (Number(cleanTien) > 0) {
@@ -194,17 +189,29 @@
                             }
                         }
 
-                        // Tải ảnh QR từ API
-                        const response = await fetch(url);
-                        const blob = await response.blob();
-                        
-                        let fileName = `QR_${ten.replace(/[^a-zA-Z0-9]/g, '_')}_${stk}.png`;
-                        zip.file(fileName, blob);
-                        count++;
+                        // Tải và vẽ qua canvas ẩn để đảm bảo định dạng file .PNG chuẩn
+                        try {
+                            const img = await loadNetworkImage(url);
+                            const canvas = document.createElement('canvas');
+                            canvas.width = img.width;
+                            canvas.height = img.height;
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(img, 0, 0);
+
+                            // Chuyển canvas thành base64 PNG dữ liệu sạch
+                            const dataUrl = canvas.toDataURL('image/png');
+                            const base64Data = dataUrl.replace(/^data:image\/png;base64,/, "");
+
+                            let fileName = `QR_${ten.replace(/[^a-zA-Z0-9]/g, '_')}_${stk}.png`;
+                            zip.file(fileName, base64Data, {base64: true});
+                            count++;
+                        } catch (imgErr) {
+                            console.error("Lỗi tải QR cho: " + ten, imgErr);
+                        }
                     }
 
                     if (count === 0) {
-                        alert("Không tìm thấy dữ liệu hợp lệ trong file Excel! Hãy kiểm tra lại tên cột (Tên, STK, Ngân Hàng, Số tiền).");
+                        alert("Không tìm thấy dữ liệu hợp lệ trong file Excel! Hãy kiểm tra lại tên cột.");
                         return;
                     }
 
@@ -214,7 +221,7 @@
                     link.download = "QR_ThanhToan_HangLoat.zip";
                     link.click();
                     
-                    alert(`Đã tạo thành công ${count} mã QR!`);
+                    alert(`Đã tạo thành công ${count} mã QR định dạng PNG!`);
                 } catch (err) {
                     console.error(err);
                     alert("Có lỗi xảy ra khi xử lý file Excel.");
@@ -226,7 +233,6 @@
             reader.readAsArrayBuffer(file);
         }
 
-        // Nhận diện ngân hàng thông minh
         function detectBankBin(bankStr) {
             const str = String(bankStr).toUpperCase().trim();
             if (str.includes('VCB') || str.includes('VIETCOM')) return '970436';
@@ -240,10 +246,9 @@
             if (str.includes('STB') || str.includes('SACOM')) return '970403';
             if (str.includes('ACB')) return '970416';
             if (!isNaN(str) && str.length >= 6) return str;
-            return '970428'; // Mặc định Nam A Bank
+            return '970428';
         }
 
-        // --- XỬ LÝ 1 ẢNH (MICA - OP1, OP2) ---
         function drawFixedText(ctx, text, x, y, size, isBold = true) {
             ctx.fillStyle = "#FF0000"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
             ctx.font = `${isBold ? 'bold' : 'normal'} ${size}px Arial`; ctx.fillText(text, x, y);
@@ -306,8 +311,15 @@
             pdf.save('bang-mica.pdf');
         }
 
-        // --- CÁC HÀM TIỆN ÍCH ---
-        function loadNetworkImage(url) { return new Promise((res) => { const i = new Image(); i.crossOrigin = "Anonymous"; i.onload = () => res(i); i.src = url; }); }
+        function loadNetworkImage(url) { 
+            return new Promise((resolve, reject) => { 
+                const i = new Image(); 
+                i.crossOrigin = "Anonymous"; 
+                i.onload = () => resolve(i); 
+                i.onerror = (err) => reject(err);
+                i.src = url; 
+            }); 
+        }
         function loadImageFromDataURL(dataUrl) { return new Promise((res) => { const i = new Image(); i.onload = () => res(i); i.src = dataUrl; }); }
         function saveTemplate(e) { const r = new FileReader(); r.onload = (e) => localStorage.setItem('template_' + document.querySelector('input[name="optionType"]:checked').value, e.target.result); r.readAsDataURL(e.target.files[0]); }
         function cropPureQR(img) {
