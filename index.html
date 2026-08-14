@@ -103,7 +103,7 @@
 
     <script>
         const SIZE_CTK = 65; 
-        const SIZE_STK = 65;
+        const SIZE_STK = 50;
 
         function toggleMode() {
             const opt = document.querySelector('input[name="optionType"]:checked').value;
@@ -132,8 +132,8 @@
         function downloadSampleExcel() {
             const ws_data = [
                 ["Tên", "STK", "Ngân Hàng", "Số Tiền"],
-                ["NGUYEN TRONG MINH", "999888999", "NAB", "2000000"],
-                ["TRAN VAN A", "123456789", "VCB", "500000"]
+                ["NGUYEN TRONG MINH", "999888999", "NAB", "2,000,000"],
+                ["TRAN VAN A", "123456789", "VCB", "500,000"]
             ];
             const ws = XLSX.utils.aoa_to_sheet(ws_data);
             const wb = XLSX.utils.book_new();
@@ -184,25 +184,29 @@
                     for (let i = 0; i < rows.length; i++) {
                         let row = rows[i];
                         
-                        let ten = String(row["Tên"] || row["TEN"] || row["Ten"] || row["Chủ tài khoản"] || "").trim();
-                        let stk = String(row["STK"] || row["Số tài khoản"] || row["SO TAI KHOAN"] || "").trim();
-                        let nganHang = String(row["Ngân Hàng"] || row["NGAN HANG"] || row["Ngan hang"] || "NAB").trim();
-                        let rawTien = String(row["Số Tiền"] || row["SỐ TIỀN"] || row["So tien"] || row["Số tiền"] || "").trim();
+                        let ten = "";
+                        let stk = "";
+                        let nganHang = "NAB";
+                        let rawTien = "";
 
-                        if (!stk || !ten) {
-                            let cellValues = Object.values(row).map(v => String(v).trim()).filter(v => v !== "");
-                            for (let val of cellValues) {
-                                let cleanNum = val.replace(/[^0-9]/g, '');
-                                if (!stk && cleanNum.length >= 6 && cleanNum.length <= 15) {
-                                    stk = cleanNum;
-                                } else if (!ten && /[a-zA-ZÀ-ỹ]/.test(val) && !val.toLowerCase().includes('tên')) {
-                                    ten = val;
-                                }
+                        // Quét thông minh không phân biệt tên cột có dấu/không dấu hoặc khoảng trắng thừa
+                        for (let key in row) {
+                            let k = key.toLowerCase().trim();
+                            let val = String(row[key] || "").trim();
+                            if (k.includes('tên') || k.includes('ten') || k.includes('chủ tài khoản')) {
+                                if (!ten) ten = val;
+                            } else if (k.includes('stk') || k.includes('số tài khoản') || k.includes('so tai khoan')) {
+                                if (!stk) stk = val;
+                            } else if (k.includes('ngân hàng') || k.includes('ngan hang') || k.includes('nh')) {
+                                if (!nganHang || nganHang === "NAB") nganHang = val;
+                            } else if (k.includes('tiền') || k.includes('tien') || k.includes('amount')) {
+                                if (!rawTien) rawTien = val;
                             }
                         }
 
                         if (!stk) continue;
 
+                        // Lọc sạch dấu phẩy, dấu chấm, chữ để lấy số tiền chính xác
                         let cleanAmount = rawTien.replace(/[^0-9]/g, '');
                         logBox.innerHTML += `Dòng ${i+1}: Tên="${ten}", STK="${stk}", NH="${nganHang}", Tiền="${cleanAmount}"<br>`;
 
@@ -311,7 +315,6 @@
             
             if(!ctkVal || !stkVal) { alert("Nhập đủ CTK và STK!"); return; }
 
-            // Tự động load file template tương ứng từ GitHub Repository
             let templatePath = selectedOption === 'op1' ? 'template_op1.jpg' : 'template_op2.jpg';
 
             const vietqrUrl = `https://img.vietqr.io/image/${document.getElementById('bankBin').value}-${stkVal}-compact.png?accountName=${encodeURIComponent(ctkVal)}`;
