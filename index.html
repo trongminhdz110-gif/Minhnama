@@ -63,9 +63,8 @@
                 <label class="block text-gray-700 font-semibold mb-1">Mã tài khoản (nhập 0 để ẩn):</label>
                 <input type="text" id="mtk" value="0" class="w-full border border-gray-300 p-2.5 rounded-lg uppercase">
             </div>
-            <div class="p-4 bg-gray-50 rounded-xl border border-dashed border-gray-300">
-                <label class="text-sm font-semibold text-gray-600 mb-2 block" id="templateLabel">Chọn File Template (Ảnh Mica):</label>
-                <input type="file" id="templateFile" accept="image/*" onchange="saveTemplate(event)" class="w-full text-sm text-gray-500">
+            <div class="p-3 bg-blue-50 rounded-xl border border-blue-200 text-xs text-blue-800">
+                💡 <b>Template đã được tải sẵn từ GitHub:</b> Hệ thống tự động sử dụng file mẫu tương ứng với OP1 hoặc OP2.
             </div>
         </div>
 
@@ -127,7 +126,6 @@
                 excelGrp.classList.add('hidden');
                 btn.innerText = "Tạo Mã QR & Ghép Thiết Kế";
                 btn.className = "w-full bg-blue-600 text-white font-bold p-3 mt-6 rounded-xl hover:bg-blue-700 transition shadow-md";
-                document.getElementById('templateLabel').innerText = opt === 'op1' ? "Template OP1 (Mica & Loa):" : "Template OP2 (Mica Full):";
             }
         }
 
@@ -208,11 +206,9 @@
                         let cleanAmount = rawTien.replace(/[^0-9]/g, '');
                         logBox.innerHTML += `Dòng ${i+1}: Tên="${ten}", STK="${stk}", NH="${nganHang}", Tiền="${cleanAmount}"<br>`;
 
-                        // Thêm độ trễ 0.5 giây giữa mỗi yêu cầu để không bị nghẽn mạng/chặn API
                         await new Promise(resolve => setTimeout(resolve, 500));
 
                         let bankBin = detectBankBin(nganHang);
-                        
                         let url = `https://img.vietqr.io/image/${bankBin}-${stk}-compact.png?accountName=${encodeURIComponent(ten)}`;
                         if (cleanAmount && Number(cleanAmount) > 0) {
                             url += `&amount=${cleanAmount}`;
@@ -234,7 +230,6 @@
                             ctx.drawImage(qrImg, qrX, 30, qrSize, qrSize);
                             
                             ctx.textAlign = "center";
-                            
                             ctx.fillStyle = "#1F2937";
                             ctx.font = "bold 24px Arial";
                             ctx.fillText(ten.toUpperCase(), canvas.width / 2, 575);
@@ -315,8 +310,9 @@
             const mtkVal = document.getElementById('mtk').value.trim();
             
             if(!ctkVal || !stkVal) { alert("Nhập đủ CTK và STK!"); return; }
-            let templateDataUrl = localStorage.getItem('template_' + selectedOption);
-            if (!templateDataUrl) { alert("Vui lòng chọn file template!"); return; }
+
+            // Tự động load file template tương ứng từ GitHub Repository
+            let templatePath = selectedOption === 'op1' ? 'template_op1.jpg' : 'template_op2.jpg';
 
             const vietqrUrl = `https://img.vietqr.io/image/${document.getElementById('bankBin').value}-${stkVal}-compact.png?accountName=${encodeURIComponent(ctkVal)}`;
             const btn = document.getElementById('actionBtn');
@@ -324,7 +320,7 @@
 
             try {
                 const [rawQrImg, templateImg] = await Promise.all([
-                    loadNetworkImage(vietqrUrl), loadImageFromDataURL(templateDataUrl)
+                    loadNetworkImage(vietqrUrl), loadNetworkImage(templatePath)
                 ]);
 
                 const canvas = document.getElementById('resultCanvas');
@@ -354,8 +350,12 @@
                 document.getElementById('downloadBtn').href = canvas.toDataURL("image/jpeg", 0.95);
                 document.getElementById('downloadBtn').classList.remove('hidden');
                 document.getElementById('pdfBtn').classList.remove('hidden');
-            } catch (e) { alert("Lỗi khi tạo ảnh!"); console.error(e); } 
-            finally { btn.disabled = false; btn.innerText = "Tạo Mã QR & Ghép Thiết Kế"; }
+            } catch (e) { 
+                alert("Lỗi khi tải template hoặc tạo ảnh! Hãy đảm bảo bạn đã đặt file template_op1.jpg và template_op2.jpg lên GitHub."); 
+                console.error(e); 
+            } finally { 
+                btn.disabled = false; btn.innerText = "Tạo Mã QR & Ghép Thiết Kế"; 
+            }
         }
 
         function downloadPDF() {
@@ -375,8 +375,7 @@
                 i.src = url; 
             }); 
         }
-        function loadImageFromDataURL(dataUrl) { return new Promise((res) => { const i = new Image(); i.onload = () => res(i); i.src = dataUrl; }); }
-        function saveTemplate(e) { const r = new FileReader(); r.onload = (e) => localStorage.setItem('template_' + document.querySelector('input[name="optionType"]:checked').value, e.target.result); r.readAsDataURL(e.target.files[0]); }
+
         function cropPureQR(img) {
             const size = Math.min(img.width, img.height) * 0.72;
             const c = document.createElement('canvas'); const ctx = c.getContext('2d');
