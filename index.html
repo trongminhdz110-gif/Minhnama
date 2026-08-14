@@ -104,7 +104,7 @@
 
     <script>
         const SIZE_CTK = 65; 
-        const SIZE_STK = 65;
+        const SIZE_STK = 50;
 
         function toggleMode() {
             const opt = document.querySelector('input[name="optionType"]:checked').value;
@@ -208,6 +208,9 @@
                         let cleanAmount = rawTien.replace(/[^0-9]/g, '');
                         logBox.innerHTML += `Dòng ${i+1}: Tên="${ten}", STK="${stk}", NH="${nganHang}", Tiền="${cleanAmount}"<br>`;
 
+                        // Thêm độ trễ 0.5 giây giữa mỗi yêu cầu để không bị nghẽn mạng/chặn API
+                        await new Promise(resolve => setTimeout(resolve, 500));
+
                         let bankBin = detectBankBin(nganHang);
                         
                         let url = `https://img.vietqr.io/image/${bankBin}-${stk}-compact.png?accountName=${encodeURIComponent(ten)}`;
@@ -218,39 +221,32 @@
                         try {
                             const qrImg = await loadNetworkImage(url);
                             
-                            // TẠO KHẢ NĂNG VẼ THÊM CHỮ TÊN, STK, SỐ TIỀN LÊN ẢNH ĐỂ XUẤT RA DỄ NHÌN
                             const canvas = document.createElement('canvas');
                             canvas.width = 600;
                             canvas.height = 760;
                             const ctx = canvas.getContext('2d');
                             
-                            // Nền trắng
                             ctx.fillStyle = "#FFFFFF";
                             ctx.fillRect(0, 0, canvas.width, canvas.height);
                             
-                            // Vẽ ảnh QR ở trên
                             let qrSize = 500;
                             let qrX = (canvas.width - qrSize) / 2;
                             ctx.drawImage(qrImg, qrX, 30, qrSize, qrSize);
                             
-                            // In phần chữ thông tin bên dưới QR
                             ctx.textAlign = "center";
                             
-                            // 1. Tên chủ tài khoản
                             ctx.fillStyle = "#1F2937";
                             ctx.font = "bold 24px Arial";
                             ctx.fillText(ten.toUpperCase(), canvas.width / 2, 575);
                             
-                            // 2. Số tài khoản & Ngân hàng
                             ctx.font = "18px Arial";
                             ctx.fillStyle = "#4B5563";
                             ctx.fillText(`STK: ${stk} (${nganHang.toUpperCase()})`, canvas.width / 2, 615);
                             
-                            // 3. Số tiền (nếu có)
                             if (cleanAmount && Number(cleanAmount) > 0) {
                                 let formattedAmount = Number(cleanAmount).toLocaleString('vi-VN') + " VNĐ";
                                 ctx.font = "bold 22px Arial";
-                                ctx.fillStyle = "#DC2626"; // Màu đỏ hiển thị số tiền
+                                ctx.fillStyle = "#DC2626";
                                 ctx.fillText(`Số tiền: ${formattedAmount}`, canvas.width / 2, 665);
                             }
 
@@ -262,7 +258,7 @@
                             zip.file(fileName, base64Data, {base64: true});
                             count++;
                         } catch (imgErr) {
-                            logBox.innerHTML += `<span class='text-red-600'>⚠️ Không thể tải ảnh QR cho dòng ${i+1} (STK: ${stk})</span><br>`;
+                            logBox.innerHTML += `<span class='text-red-600'>⚠️ Lỗi dòng ${i+1}: Không thể tải ảnh QR (STK: ${stk})</span><br>`;
                         }
                     }
 
