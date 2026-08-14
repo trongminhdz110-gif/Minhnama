@@ -189,7 +189,6 @@
                         let nganHang = "NAB";
                         let rawTien = "";
 
-                        // Quét thông minh không phân biệt tên cột có dấu/không dấu hoặc khoảng trắng thừa
                         for (let key in row) {
                             let k = key.toLowerCase().trim();
                             let val = String(row[key] || "").trim();
@@ -206,7 +205,6 @@
 
                         if (!stk) continue;
 
-                        // Lọc sạch dấu phẩy, dấu chấm, chữ để lấy số tiền chính xác
                         let cleanAmount = rawTien.replace(/[^0-9]/g, '');
                         logBox.innerHTML += `Dòng ${i+1}: Tên="${ten}", STK="${stk}", NH="${nganHang}", Tiền="${cleanAmount}"<br>`;
 
@@ -342,12 +340,23 @@
                 const croppedQR = cropPureQR(rawQrImg);
                 boxes.forEach(box => { ctx.drawImage(croppedQR, box.x, box.y, box.w, box.h); });
 
-                textBoxes.forEach(box => {
+                textBoxes.forEach((box, index) => {
                     let centerX = box.x + box.w / 2, centerY = box.y + box.h / 2;
-                    drawFixedText(ctx, "CTK: " + ctkVal, centerX, centerY - 50, SIZE_CTK);
+                    let ctkSize = SIZE_CTK;
+                    let stkSize = SIZE_STK;
+                    let yOffset = 50;
+
+                    // Tùy chỉnh riêng kích thước và khoảng cách cho ô loa vàng (ô số 3) của OP1
+                    if (selectedOption === 'op1' && index === 2) {
+                        ctkSize = 34;
+                        stkSize = 26;
+                        yOffset = 22;
+                    }
+
+                    drawFixedText(ctx, "CTK: " + ctkVal, centerX, centerY - yOffset, ctkSize);
                     let stkText = "STK: " + stkVal;
                     if(mtkVal && mtkVal !== "0") stkText += " - MTK: " + mtkVal;
-                    drawFixedText(ctx, stkText, centerX, centerY + 50, SIZE_STK);
+                    drawFixedText(ctx, stkText, centerX, centerY + yOffset, stkSize);
                 });
 
                 document.getElementById('downloadBtn').href = canvas.toDataURL("image/jpeg", 0.95);
