@@ -2,125 +2,372 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Tạo Bảng Mica VietQR - Full</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phần Mềm Tạo Bảng Mica VietQR</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- jsPDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
-<body class="bg-gray-100 p-6">
-    <div class="max-w-xl mx-auto bg-white p-6 rounded-2xl shadow-lg">
-        <h1 class="text-xl font-bold mb-4 text-center">Công Cụ Tạo Bảng Mica</h1>
+<body class="bg-gray-100 min-h-screen p-6">
+    <div class="max-w-xl mx-auto bg-white p-6 rounded-2xl shadow-lg border border-gray-100">
+        <h1 class="text-2xl font-extrabold text-gray-800 mb-6 text-center">Tạo Bảng Mica VietQR</h1>
         
-        <!-- Input fields -->
-        <div class="space-y-4">
-            <div>
-                <label class="block font-semibold">Chọn Loại:</label>
-                <select id="optionType" onchange="toggleTemplateInput()" class="w-full border p-2 rounded">
-                    <option value="op1">OP1: Bảng MICA & Loa</option>
-                    <option value="op2">OP2: Bảng MICA FULL</option>
-                </select>
+        <!-- Chọn Option Thiết Kế -->
+        <div class="mb-4 p-4 bg-blue-50/60 rounded-xl border border-blue-100">
+            <label class="block text-gray-700 font-bold mb-2">Chọn loại thiết kế (Option):</label>
+            <div class="flex gap-6">
+                <label class="flex items-center cursor-pointer">
+                    <input type="radio" name="optionType" value="op1" checked onchange="toggleTemplateInput()" class="mr-2 w-4 h-4 text-blue-600">
+                    <span class="font-medium text-blue-900">OP1: Bảng MICA & Loa</span>
+                </label>
+                <label class="flex items-center cursor-pointer">
+                    <input type="radio" name="optionType" value="op2" onchange="toggleTemplateInput()" class="mr-2 w-4 h-4 text-blue-600">
+                    <span class="font-medium text-blue-900">OP2: Bảng MICA FULL</span>
+                </label>
             </div>
-            <div>
-                <label class="block font-semibold">CTK:</label>
-                <input type="text" id="ctk" class="w-full border p-2 rounded uppercase" oninput="this.value = this.value.toUpperCase()">
-            </div>
-            <div>
-                <label class="block font-semibold">STK:</label>
-                <input type="text" id="stk" class="w-full border p-2 rounded">
-            </div>
-            <div>
-                <label class="block font-semibold">MTK (để 0 nếu ẩn):</label>
-                <input type="text" id="mtk" value="0" class="w-full border p-2 rounded">
-            </div>
-            <input type="file" id="templateFile" accept="image/*" onchange="saveTemplate(event)" class="w-full text-sm">
         </div>
 
-        <button onclick="generate()" class="w-full bg-blue-600 text-white font-bold p-3 mt-4 rounded hover:bg-blue-700">Tạo Ảnh & PDF</button>
+        <!-- Chọn Ngân Hàng -->
+        <div class="mb-4">
+            <label class="block text-gray-700 font-semibold mb-1">Chọn Ngân hàng:</label>
+            <select id="bankBin" class="w-full border border-gray-300 p-2.5 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                <option value="970428" selected>Nam A Bank (Nam Á)</option>
+                <option value="970436">Vietcombank (VCB)</option>
+                <option value="970407">Techcombank (TCB)</option>
+                <option value="970422">MB Bank (Quân Đội)</option>
+                <option value="970416">ACB (Á Châu)</option>
+                <option value="970418">BIDV</option>
+                <option value="970405">Agribank</option>
+                <option value="970432">VPBank</option>
+                <option value="970423">TPBank</option>
+                <option value="970403">Sacombank</option>
+                <option value="970415">VietinBank</option>
+                <option value="970431">Eximbank</option>
+                <option value="970437">HDBank</option>
+            </select>
+        </div>
 
-        <div class="mt-6 text-center">
-            <canvas id="resultCanvas" class="hidden"></canvas>
-            <div class="flex gap-2 justify-center mt-4">
-                <a id="downloadJpg" class="bg-green-600 text-white px-4 py-2 rounded hidden" download="bang-mica.jpg">Tải JPG</a>
-                <button id="downloadPdf" onclick="downloadPDF()" class="bg-red-600 text-white px-4 py-2 rounded hidden">Tải PDF</button>
+        <!-- Nhập thông tin tài khoản -->
+        <div class="mb-4">
+            <label class="block text-gray-700 font-semibold mb-1">Tên chủ tài khoản (CTK):</label>
+            <input type="text" id="ctk" placeholder="Ví dụ: NGUYEN VAN A" class="w-full border border-gray-300 p-2.5 rounded-lg uppercase focus:ring-2 focus:ring-blue-500 focus:outline-none" oninput="this.value = this.value.toUpperCase()">
+        </div>
+        <div class="mb-4">
+            <label class="block text-gray-700 font-semibold mb-1">Số tài khoản (STK):</label>
+            <input type="text" id="stk" placeholder="Nhập số tài khoản..." class="w-full border border-gray-300 p-2.5 rounded-lg uppercase focus:ring-2 focus:ring-blue-500 focus:outline-none" oninput="this.value = this.value.toUpperCase()">
+        </div>
+        <div class="mb-4">
+            <label class="block text-gray-700 font-semibold mb-1">Mã tài khoản (MTK - Nhập 0 hoặc để trống để ẩn):</label>
+            <input type="text" id="mtk" value="0" class="w-full border border-gray-300 p-2.5 rounded-lg uppercase focus:ring-2 focus:ring-blue-500 focus:outline-none" oninput="this.value = this.value.toUpperCase()">
+        </div>
+
+        <!-- Chọn File Template -->
+        <div class="mb-6 p-4 bg-gray-50 rounded-xl border border-dashed border-gray-300">
+            <div class="flex justify-between items-center mb-1">
+                <label id="templateLabel" class="text-gray-700 font-semibold">Template OP1:</label>
+                <span id="templateStatus" class="text-xs font-semibold text-gray-500">Chưa chọn file</span>
             </div>
+            <input type="file" id="templateFile" accept="image/*" onchange="saveTemplate(event)" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
+            <p class="text-xs text-gray-500 mt-1">Lưu ý: Chỉ cần chọn file mẫu 1 lần cho mỗi loại, hệ thống tự động ghi nhớ.</p>
+        </div>
+
+        <!-- Nút thực hiện -->
+        <button id="actionBtn" onclick="processImage()" class="w-full bg-blue-600 text-white font-bold p-3 rounded-xl hover:bg-blue-700 transition shadow-md shadow-blue-200">
+            Tạo Mã QR và Ghép Thiết Kế
+        </button>
+
+        <!-- Hiển thị kết quả -->
+        <div class="mt-6 text-center">
+            <h2 class="font-semibold text-gray-700 mb-2">Xem trước kết quả:</h2>
+            <canvas id="resultCanvas" class="border border-gray-200 max-w-full mx-auto rounded-lg shadow-sm hidden"></canvas>
+            <div class="mt-4 flex justify-center gap-3">
+                <a id="downloadBtn" class="bg-emerald-600 text-white font-bold px-5 py-2.5 rounded-xl hidden hover:bg-emerald-700 transition shadow-sm" download="bang-mica-vietqr.jpg">Tải ảnh JPG</a>
+                <button onclick="downloadPDF()" id="pdfBtn" class="bg-rose-600 text-white font-bold px-5 py-2.5 rounded-xl hidden hover:bg-rose-700 transition shadow-sm">Tải file PDF (Đúng Kích Thước)</button>
+            </div>
+            <p class="text-xs text-amber-600 mt-2 hidden" id="printNote">📌 Khi in file PDF, hãy chọn chế độ <b>Actual Size (100% scale)</b> để đúng chuẩn kích thước thực tế!</p>
         </div>
     </div>
 
     <script>
-        const SIZE_CTK = 65; 
-        const SIZE_STK = 50;
+        window.addEventListener('DOMContentLoaded', () => {
+            toggleTemplateInput();
+        });
 
-        function drawFixedText(ctx, text, x, y, size) {
-            ctx.fillStyle = "#FF0000";
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
-            ctx.font = `bold ${size}px Arial`;
-            ctx.fillText(text, x, y);
+        function getActiveOption() {
+            return document.querySelector('input[name="optionType"]:checked').value;
         }
 
-        async function generate() {
-            const opt = document.getElementById('optionType').value;
-            const ctk = document.getElementById('ctk').value.trim();
-            const stk = document.getElementById('stk').value.trim();
-            const mtk = document.getElementById('mtk').value.trim();
-            const template = localStorage.getItem('template_' + opt);
+        function toggleTemplateInput() {
+            const opt = getActiveOption();
+            document.getElementById('templateLabel').innerText = opt === 'op1' ? "Template OP1 (Mica & Loa):" : "Template OP2 (Mica Full):";
+            document.getElementById('templateFile').value = "";
+            checkSavedTemplate();
+        }
 
-            if(!template) { alert("Chưa chọn file template!"); return; }
+        function saveTemplate(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const opt = getActiveOption();
+                    try {
+                        localStorage.setItem('template_' + opt, e.target.result);
+                        updateStatusUI(true);
+                    } catch (err) {
+                        alert("Dung lượng ảnh quá lớn. Vui lòng chọn ảnh nhẹ hơn.");
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+        }
 
-            const vietqrUrl = `https://img.vietqr.io/image/970428-${stk}-compact.png?accountName=${encodeURIComponent(ctk)}`;
+        function checkSavedTemplate() {
+            const opt = getActiveOption();
+            const saved = localStorage.getItem('template_' + opt);
+            updateStatusUI(!!saved);
+        }
+
+        function updateStatusUI(isSaved) {
+            const statusEl = document.getElementById('templateStatus');
+            if (isSaved) {
+                statusEl.innerText = "✅ Đã lưu sẵn trong máy";
+                statusEl.className = "text-xs font-semibold text-emerald-600";
+            } else {
+                statusEl.innerText = "⚠️ Chưa có template (Vui lòng chọn file)";
+                statusEl.className = "text-xs font-semibold text-rose-600";
+            }
+        }
+
+        async function processImage() {
+            const selectedOption = getActiveOption();
+            const selectedBin = document.getElementById('bankBin').value;
+            const ctkVal = document.getElementById('ctk').value.trim();
+            const stkVal = document.getElementById('stk').value.trim();
+            const mtkVal = document.getElementById('mtk').value.trim();
             
-            const [qrImg, tempImg] = await Promise.all([
-                loadImg(vietqrUrl),
-                loadImg(template)
-            ]);
+            if (!ctkVal || !stkVal) {
+                alert("Vui lòng nhập đầy đủ Tên chủ tài khoản và Số tài khoản!");
+                return;
+            }
 
-            const canvas = document.getElementById('resultCanvas');
-            const ctx = canvas.getContext('2d');
-            canvas.width = tempImg.width;
-            canvas.height = tempImg.height;
-            ctx.drawImage(tempImg, 0, 0);
+            let templateDataUrl = localStorage.getItem('template_' + selectedOption);
+            const fileInput = document.getElementById('templateFile').files[0];
 
-            const boxes = opt === 'op1' ? 
-                [ {x: 339, y: 367, w: 1132, h: 1132}, {x: 1836, y: 369, w: 1127, h: 1126}, {x: 266, y: 2532, w: 761, h: 709} ] :
-                [ {x: 339, y: 367, w: 1132, h: 1132}, {x: 1836, y: 369, w: 1127, h: 1126}, {x: 339, y: 2618, w: 1133, h: 1128}, {x: 1835, y: 2623, w: 1135, h: 1128} ];
+            if (fileInput) {
+                templateDataUrl = await readFileAsDataURL(fileInput);
+                localStorage.setItem('template_' + selectedOption, templateDataUrl);
+                updateStatusUI(true);
+            }
 
-            const textBoxes = opt === 'op1' ? 
-                [ {x: 287, y: 1674, w: 1243, h: 348}, {x: 1765, y: 1653, w: 1286, h: 380}, {x: 214, y: 3263, w: 870, h: 174} ] :
-                [ {x: 287, y: 1674, w: 1243, h: 348}, {x: 1765, y: 1653, w: 1286, h: 380}, {x: 272, y: 3913, w: 1280, h: 361}, {x: 1771, y: 3920, w: 1286, h: 344} ];
+            if (!templateDataUrl) {
+                alert("Vui lòng chọn file Template cho " + selectedOption.toUpperCase() + " ít nhất một lần để hệ thống ghi nhớ!");
+                return;
+            }
 
-            // Vẽ QR
-            const cropped = cropQR(qrImg);
-            boxes.forEach(b => ctx.drawImage(cropped, b.x, b.y, b.w, b.h));
+            const vietqrUrl = `https://img.vietqr.io/image/${selectedBin}-${stkVal}-compact.png?accountName=${encodeURIComponent(ctkVal)}`;
 
-            // Vẽ Text (Cố định vị trí)
-            textBoxes.forEach(b => {
-                let midX = b.x + b.w/2;
-                let midY = b.y + b.h/2;
-                drawFixedText(ctx, "CTK: " + ctk, midX, midY - 50, SIZE_CTK);
-                let stkStr = "STK: " + stk;
-                if(mtk && mtk !== "0") stkStr += " - MTK: " + mtk;
-                drawFixedText(ctx, stkStr, midX, midY + 50, SIZE_STK);
+            const btn = document.getElementById('actionBtn');
+            btn.innerText = "Đang kết nối API VietQR...";
+            btn.disabled = true;
+
+            try {
+                const [rawQrImg, templateImg] = await Promise.all([
+                    loadNetworkImageWithTimeout(vietqrUrl, 8000),
+                    loadImageFromDataURL(templateDataUrl)
+                ]);
+
+                const croppedQR = cropPureQR(rawQrImg);
+
+                const canvas = document.getElementById('resultCanvas');
+                const ctx = canvas.getContext('2d');
+                
+                const scale = 1;
+                canvas.width = templateImg.width * scale;
+                canvas.height = templateImg.height * scale;
+                canvas.classList.remove('hidden');
+
+                ctx.scale(scale, scale);
+                ctx.drawImage(templateImg, 0, 0);
+
+                const textLines = [];
+                if (ctkVal) textLines.push("CTK: " + ctkVal);
+                if (stkVal) textLines.push("STK: " + stkVal);
+                if (mtkVal && mtkVal !== "0") textLines.push("MTK: " + mtkVal);
+
+                if (selectedOption === 'op1') {
+                    // --- OP1: MICA & LOA (Chỉ có 1 ô loa dưới bên trái) ---
+                    const qrBox1 = { x: 339, y: 367, w: 1132, h: 1132 };
+                    const qrBox2 = { x: 1836, y: 369, w: 1127, h: 1126 };
+                    const qrBox3 = { x: 266, y: 2532, w: 761, h: 709 };
+
+                    drawQRWithBorder(ctx, croppedQR, qrBox1);
+                    drawQRWithBorder(ctx, croppedQR, qrBox2);
+                    drawQRWithBorder(ctx, croppedQR, qrBox3);
+
+                    const textBox1 = { x: 287, y: 1674, w: 1243, h: 348 };
+                    const textBox2 = { x: 1765, y: 1653, w: 1286, h: 380 };
+                    drawTextBox(ctx, textLines, textBox1, true, 0.95);
+                    drawTextBox(ctx, textLines, textBox2, true, 0.95);
+
+                    // 1 khung STK ở dưới bên trái cho loa
+                    const textBox3 = { x: 214, y: 3263, w: 870, h: 174 };
+                    const speakerText = ["STK: " + stkVal];
+                    drawTextBox(ctx, speakerText, textBox3, true, 0.95);
+
+                } else {
+                    // --- OP2: FULL MICA (4 ô đầy đủ) ---
+                    const qrBox1 = { x: 339, y: 367, w: 1132, h: 1132 };
+                    const qrBox2 = { x: 1836, y: 369, w: 1127, h: 1126 };
+                    const qrBox3 = { x: 339, y: 2618, w: 1133, h: 1128 };
+                    const qrBox4 = { x: 1835, y: 2623, w: 1135, h: 1128 };
+
+                    drawQRWithBorder(ctx, croppedQR, qrBox1);
+                    drawQRWithBorder(ctx, croppedQR, qrBox2);
+                    drawQRWithBorder(ctx, croppedQR, qrBox3);
+                    drawQRWithBorder(ctx, croppedQR, qrBox4);
+
+                    const textBox1 = { x: 287, y: 1674, w: 1243, h: 348 };
+                    const textBox2 = { x: 1765, y: 1653, w: 1286, h: 380 };
+                    const textBox3 = { x: 272, y: 3913, w: 1280, h: 361 };
+                    const textBox4 = { x: 1771, y: 3920, w: 1286, h: 344 };
+
+                    drawTextBox(ctx, textLines, textBox1, true, 0.95);
+                    drawTextBox(ctx, textLines, textBox2, true, 0.95);
+                    drawTextBox(ctx, textLines, textBox3, true, 0.95);
+                    drawTextBox(ctx, textLines, textBox4, true, 0.95);
+                }
+
+                const downloadBtn = document.getElementById('downloadBtn');
+                downloadBtn.href = canvas.toDataURL("image/jpeg", 0.95);
+                downloadBtn.classList.remove('hidden');
+                document.getElementById('pdfBtn').classList.remove('hidden');
+                document.getElementById('printNote').classList.remove('hidden');
+
+            } catch (error) {
+                alert("Không thể kết nối API VietQR hoặc quá thời gian chờ (Timeout). Vui lòng kiểm tra lại mạng hoặc Số tài khoản!");
+                console.error(error);
+            } finally {
+                btn.innerText = "Tạo Mã QR và Ghép Thiết Kế";
+                btn.disabled = false;
+            }
+        }
+
+        function loadNetworkImageWithTimeout(url, timeoutMs) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.crossOrigin = "Anonymous";
+
+                let timer = setTimeout(() => {
+                    img.src = "";
+                    reject(new Error("Network timeout"));
+                }, timeoutMs);
+
+                img.onload = () => {
+                    clearTimeout(timer);
+                    resolve(img);
+                };
+
+                img.onerror = (err) => {
+                    clearTimeout(timer);
+                    reject(err);
+                };
+
+                img.src = url;
             });
+        }
 
-            document.getElementById('downloadJpg').href = canvas.toDataURL("image/jpeg", 0.95);
-            document.getElementById('downloadJpg').classList.remove('hidden');
-            document.getElementById('downloadPdf').classList.remove('hidden');
+        function loadImageFromDataURL(dataUrl) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.onload = () => resolve(img);
+                img.src = dataUrl;
+            });
+        }
+
+        function readFileAsDataURL(file) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result);
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function cropPureQR(img) {
+            const finalSize = Math.min(img.width, img.height) * 0.72;
+            const startX = (img.width - finalSize) / 2;
+            const startY = img.height * 0.14; 
+
+            const qrCanvas = document.createElement('canvas');
+            const qrCtx = qrCanvas.getContext('2d');
+            qrCanvas.width = finalSize;
+            qrCanvas.height = finalSize;
+
+            qrCtx.drawImage(img, startX, startY, finalSize, finalSize, 0, 0, finalSize, finalSize);
+            return qrCanvas;
+        }
+
+        function drawQRWithBorder(ctx, qrImg, box) {
+            ctx.drawImage(qrImg, box.x, box.y, box.w, box.h);
+            ctx.strokeStyle = "#CCCCCC"; 
+            ctx.lineWidth = 2;
+            ctx.strokeRect(box.x, box.y, box.w, box.h);
+        }
+
+        function drawTextBox(ctx, lines, box, isBold = true, paddingFactor = 0.95) {
+            if (!lines || lines.length === 0) return;
+            ctx.fillStyle = "#FF0000"; 
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+
+            let fontSize = box.h / (lines.length * 1.1);
+            
+            for (let line of lines) {
+                ctx.font = `${isBold ? 'bold' : 'normal'} 100px Arial`;
+                let metrics = ctx.measureText(line);
+                let scaleW = (box.w * 0.95) / (metrics.width / 100);
+                if (scaleW < fontSize) {
+                    fontSize = scaleW;
+                }
+            }
+            
+            fontSize = Math.max(40, Math.min(fontSize, box.h / lines.length)) * paddingFactor;
+
+            ctx.font = `${isBold ? 'bold' : 'normal'} ${fontSize}px Arial`;
+            let lineHeight = fontSize * 1.15;
+            let totalHeight = lines.length * lineHeight;
+            let startY = box.y + (box.h / 2) - (totalHeight / 2) + (lineHeight / 2);
+
+            let centerX = box.x + box.w / 2;
+            for (let i = 0; i < lines.length; i++) {
+                ctx.fillText(lines[i], centerX, startY + (i * lineHeight));
+            }
         }
 
         function downloadPDF() {
             const canvas = document.getElementById('resultCanvas');
-            const pdf = new jsPDF({orientation: 'p', unit: 'mm', format: [190, 190 * (canvas.height/canvas.width)]});
-            pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, 190, 190 * (canvas.height/canvas.width));
-            pdf.save('bang-mica.pdf');
-        }
+            if (canvas.classList.contains('hidden')) {
+                alert("Vui lòng tạo thiết kế trước!");
+                return;
+            }
 
-        function loadImg(src) { return new Promise(res => { const i = new Image(); i.crossOrigin = "Anonymous"; i.onload = () => res(i); i.src = src; }); }
-        function saveTemplate(e) { const r = new FileReader(); r.onload = (e) => localStorage.setItem('template_' + document.getElementById('optionType').value, e.target.result); r.readAsDataURL(e.target.files[0]); }
-        function cropQR(img) {
-            const s = Math.min(img.width, img.height) * 0.72;
-            const c = document.createElement('canvas'); const ctx = c.getContext('2d');
-            c.width = c.height = s;
-            ctx.drawImage(img, (img.width-s)/2, img.height*0.14, s, s, 0, 0, s, s);
-            return c;
+            const selectedOption = getActiveOption();
+            const micaWidth = 190; 
+            const imgAspect = canvas.height / canvas.width;
+            const micaHeight = micaWidth * imgAspect; 
+
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF({
+                orientation: micaHeight > micaWidth ? 'p' : 'l',
+                unit: 'mm',
+                format: [micaWidth, micaHeight]
+            });
+
+            const imgData = canvas.toDataURL('image/jpeg', 0.95);
+            pdf.addImage(imgData, 'JPEG', 0, 0, micaWidth, micaHeight);
+            
+            const fileName = selectedOption === 'op1' ? 'bang-mica-op1-19cm.pdf' : 'bang-mica-op2-full-19cm.pdf';
+            pdf.save(fileName);
         }
     </script>
 </body>
