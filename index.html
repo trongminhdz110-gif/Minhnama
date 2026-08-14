@@ -74,10 +74,9 @@
             <div class="p-4 bg-emerald-50 rounded-xl border border-emerald-200">
                 <p class="text-sm text-emerald-800 mb-3">
                     <b>Cấu trúc file Excel hỗ trợ:</b><br>
-                    <code class="bg-white px-1 py-0.5 rounded">Tên</code> | <code class="bg-white px-1 py-0.5 rounded">STK</code> | <code class="bg-white px-1 py-0.5 rounded">Ngân Hàng</code> | <code class="bg-white px-1 py-0.5 rounded">Số tiền</code>
+                    <code class="bg-white px-1 py-0.5 rounded">Tên (Cột A)</code> | <code class="bg-white px-1 py-0.5 rounded">STK (Cột B)</code> | <code class="bg-white px-1 py-0.5 rounded">Ngân Hàng (Cột C)</code> | <code class="bg-white px-1 py-0.5 rounded">Số Tiền (Cột D)</code>
                 </p>
                 <input type="file" id="excelFile" accept=".xlsx, .xls" class="w-full text-sm text-gray-700 bg-white p-2 border border-emerald-300 rounded-lg">
-                <p class="text-xs text-gray-500 mt-2">* Tự động tương thích cả khi để trống cột đầu tiên.</p>
             </div>
         </div>
 
@@ -137,7 +136,7 @@
             }
         }
 
-        // --- XỬ LÝ HÀNG LOẠT (EXCEL - OPTION 3) CỰC KỲ THÔNG MINH ---
+        // --- XỬ LÝ HÀNG LOẠT (EXCEL - OPTION 3) CHUẨN XÁC THEO FILE ---
         async function processExcel() {
             const fileInput = document.getElementById('excelFile');
             if (!fileInput.files.length) { alert("Vui lòng chọn file Excel!"); return; }
@@ -157,11 +156,11 @@
                     
                     const jsonData = XLSX.utils.sheet_to_json(sheet, {header: 1});
                     
-                    // Mặc định vị trí theo cấu trúc chuẩn (Cột B: 1, C: 2, D: 3, E: 4)
-                    let colMap = { ten: 1, stk: 2, nganHang: 3, tien: 4 };
-                    let startRow = 0;
+                    // Khớp chính xác theo ảnh của bạn: Cột A (0)=Tên, Cột B (1)=STK, Cột C (2)=Ngân hàng, Cột D (3)=Số tiền
+                    let colMap = { ten: 0, stk: 1, nganHang: 2, tien: 3 };
+                    let startRow = 1; // Bắt đầu từ dòng 2 (index 1)
 
-                    // Quét tìm dòng tiêu đề
+                    // Quét tìm dòng tiêu đề nếu có thay đổi vị trí
                     for (let i = 0; i < jsonData.length; i++) {
                         let row = jsonData[i];
                         if (!row) continue;
@@ -187,19 +186,19 @@
                         let row = jsonData[i];
                         if (!row || row.length === 0) continue;
 
-                        let ten = colMap.ten !== undefined && row[colMap.ten] !== undefined ? String(row[colMap.ten]).trim() : '';
-                        let stk = colMap.stk !== undefined && row[colMap.stk] !== undefined ? String(row[colMap.stk]).trim() : '';
+                        let ten = row[colMap.ten] !== undefined ? String(row[colMap.ten]).trim() : '';
+                        let stk = row[colMap.stk] !== undefined ? String(row[colMap.stk]).trim() : '';
                         let nganHang = colMap.nganHang !== undefined && row[colMap.nganHang] !== undefined ? String(row[colMap.nganHang]).trim() : '';
                         let rawTien = colMap.tien !== undefined && row[colMap.tien] !== undefined ? row[colMap.tien] : '';
 
-                        // Quét vét cạn thông minh từng ô nếu cột bị lệch hoặc thiếu dữ liệu
+                        // Quét vét cạn dự phòng nếu cột chỉ định bị trống hoặc lệch
                         if (!stk || !ten) {
                             for (let cell of row) {
                                 if (!cell) continue;
                                 let s = String(cell).trim();
                                 if (!stk && /^\d{4,20}$/.test(s)) {
                                     stk = s;
-                                } else if (!ten && /[a-zA-ZÀ-ỹ]/.test(s) && s.length > 2) {
+                                } else if (!ten && /[a-zA-ZÀ-ỹ]/.test(s) && s.length > 1) {
                                     let clean = s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
                                     if (!['ten', 'stk', 'ngan hang', 'so tien'].some(h => clean.includes(h))) {
                                         ten = s;
@@ -212,7 +211,6 @@
 
                         if (!stk || !ten) continue;
 
-                        // Bỏ qua nếu dòng đọc phải tiêu đề text
                         let checkHeaderStr = ten.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
                         if (checkHeaderStr === 'ten' || checkHeaderStr === 'hoten' || checkHeaderStr === 'chu tai khoan') continue;
 
