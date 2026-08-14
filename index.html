@@ -73,11 +73,11 @@
         <div id="excelInputGroup" class="space-y-4 hidden">
             <div class="p-4 bg-emerald-50 rounded-xl border border-emerald-200">
                 <p class="text-sm text-emerald-800 mb-3">
-                    <b>Cấu trúc file Excel yêu cầu có các cột:</b><br>
+                    <b>Cấu trúc file Excel hỗ trợ:</b><br>
                     <code class="bg-white px-1 py-0.5 rounded">Tên</code> | <code class="bg-white px-1 py-0.5 rounded">STK</code> | <code class="bg-white px-1 py-0.5 rounded">Ngân Hàng</code> | <code class="bg-white px-1 py-0.5 rounded">Số tiền</code>
                 </p>
                 <input type="file" id="excelFile" accept=".xlsx, .xls" class="w-full text-sm text-gray-700 bg-white p-2 border border-emerald-300 rounded-lg">
-                <p class="text-xs text-gray-500 mt-2">* Hỗ trợ file Excel có cột lệch hoặc để trống cột đầu tiên.</p>
+                <p class="text-xs text-gray-500 mt-2">* Tự động tương thích cả khi để trống cột đầu tiên.</p>
             </div>
         </div>
 
@@ -137,7 +137,7 @@
             }
         }
 
-        // --- XỬ LÝ HÀNG LOẠT (EXCEL - OPTION 3) THEO DẠNG MẢNG THÔNG MINH ---
+        // --- XỬ LÝ HÀNG LOẠT (EXCEL - OPTION 3) CỰC KỲ THÔNG MINH ---
         async function processExcel() {
             const fileInput = document.getElementById('excelFile');
             if (!fileInput.files.length) { alert("Vui lòng chọn file Excel!"); return; }
@@ -155,55 +155,66 @@
                     const sheetName = workbook.SheetNames[0];
                     const sheet = workbook.Sheets[sheetName];
                     
-                    // Đọc file Excel dưới dạng danh sách các dòng (array of arrays) để tránh lỗi lệch cột
                     const jsonData = XLSX.utils.sheet_to_json(sheet, {header: 1});
                     
-                    let headerRowIdx = -1;
-                    let colMap = { ten: -1, stk: -1, nganHang: -1, tien: -1 };
+                    // Mặc định vị trí theo cấu trúc chuẩn (Cột B: 1, C: 2, D: 3, E: 4)
+                    let colMap = { ten: 1, stk: 2, nganHang: 3, tien: 4 };
+                    let startRow = 0;
 
-                    // Tự động tìm dòng tiêu đề chứa các từ khóa Tên, STK...
+                    // Quét tìm dòng tiêu đề
                     for (let i = 0; i < jsonData.length; i++) {
                         let row = jsonData[i];
                         if (!row) continue;
-                        let foundTen = -1, foundStk = -1, foundNh = -1, foundTien = -1;
-                        
+                        let found = false;
                         row.forEach((cell, idx) => {
                             if (!cell) return;
                             let text = String(cell).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
-                            if (text.includes('ten') || text.includes('hoten') || text.includes('chutaikhoan')) foundTen = idx;
-                            if (text.includes('stk') || text.includes('sotaikhoan') || text.includes('account')) foundStk = idx;
-                            if (text.includes('nganhang') || text.includes('bank') || text.includes('nh')) foundNh = idx;
-                            if (text.includes('sotien') || text.includes('tien') || text.includes('amount') || text.includes('thanhtien')) foundTien = idx;
+                            if (text.includes('ten') || text.includes('hoten') || text.includes('chutaikhoan')) { colMap.ten = idx; found = true; }
+                            if (text.includes('stk') || text.includes('sotaikhoan') || text.includes('account')) { colMap.stk = idx; found = true; }
+                            if (text.includes('nganhang') || text.includes('bank') || text.includes('nh')) { colMap.nganHang = idx; }
+                            if (text.includes('sotien') || text.includes('tien') || text.includes('amount') || text.includes('thanhtien')) { colMap.tien = idx; }
                         });
-
-                        if (foundTen !== -1 && foundStk !== -1) {
-                            headerRowIdx = i;
-                            colMap = { ten: foundTen, stk: foundStk, nganHang: foundNh, tien: foundTien };
+                        if (found) {
+                            startRow = i + 1;
                             break;
                         }
-                    }
-
-                    if (headerRowIdx === -1) {
-                        alert("Không tìm thấy tiêu đề hợp lệ (Cần có ít nhất cột Tên và STK) trong file Excel!");
-                        document.getElementById('actionBtn').disabled = false;
-                        document.getElementById('loadingStatus').classList.add('hidden');
-                        return;
                     }
 
                     const zip = new JSZip();
                     let count = 0;
 
-                    // Đọc dữ liệu từ các dòng phía dưới dòng tiêu đề
-                    for (let i = headerRowIdx + 1; i < jsonData.length; i++) {
+                    for (let i = startRow; i < jsonData.length; i++) {
                         let row = jsonData[i];
                         if (!row || row.length === 0) continue;
 
-                        let ten = String(row[colMap.ten] || '').trim();
-                        let stk = String(row[colMap.stk] || '').trim();
-                        let nganHang = colMap.nganHang !== -1 ? String(row[colMap.nganHang] || '').trim() : '';
-                        let rawTien = colMap.tien !== -1 ? row[colMap.tien] : '';
+                        let ten = colMap.ten !== undefined && row[colMap.ten] !== undefined ? String(row[colMap.ten]).trim() : '';
+                        let stk = colMap.stk !== undefined && row[colMap.stk] !== undefined ? String(row[colMap.stk]).trim() : '';
+                        let nganHang = colMap.nganHang !== undefined && row[colMap.nganHang] !== undefined ? String(row[colMap.nganHang]).trim() : '';
+                        let rawTien = colMap.tien !== undefined && row[colMap.tien] !== undefined ? row[colMap.tien] : '';
+
+                        // Quét vét cạn thông minh từng ô nếu cột bị lệch hoặc thiếu dữ liệu
+                        if (!stk || !ten) {
+                            for (let cell of row) {
+                                if (!cell) continue;
+                                let s = String(cell).trim();
+                                if (!stk && /^\d{4,20}$/.test(s)) {
+                                    stk = s;
+                                } else if (!ten && /[a-zA-ZÀ-ỹ]/.test(s) && s.length > 2) {
+                                    let clean = s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                                    if (!['ten', 'stk', 'ngan hang', 'so tien'].some(h => clean.includes(h))) {
+                                        ten = s;
+                                    }
+                                } else if (!rawTien && /^\d{1,15}$/.test(s) && Number(s) > 999) {
+                                    rawTien = s;
+                                }
+                            }
+                        }
 
                         if (!stk || !ten) continue;
+
+                        // Bỏ qua nếu dòng đọc phải tiêu đề text
+                        let checkHeaderStr = ten.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                        if (checkHeaderStr === 'ten' || checkHeaderStr === 'hoten' || checkHeaderStr === 'chu tai khoan') continue;
 
                         let bankBin = detectBankBin(nganHang);
                         let url = `https://img.vietqr.io/image/${bankBin}-${stk}.png?accountName=${encodeURIComponent(ten)}`;
@@ -235,7 +246,7 @@
                     }
 
                     if (count === 0) {
-                        alert("Không tìm thấy dòng dữ liệu nào hợp lệ bên dưới tiêu đề!");
+                        alert("Không tìm thấy dòng dữ liệu hợp lệ trong file Excel! Hãy kiểm tra lại file của bạn.");
                         return;
                     }
 
