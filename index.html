@@ -72,12 +72,13 @@
         <!-- NHÓM EXCEL (Dành cho OP3) -->
         <div id="excelInputGroup" class="space-y-4 hidden">
             <div class="p-4 bg-emerald-50 rounded-xl border border-emerald-200">
-                <p class="text-sm text-emerald-800 mb-3">
-                    <b>Cấu trúc file Excel hỗ trợ:</b><br>
-                    Cột Tên | Cột STK | Cột Ngân Hàng | Cột Số Tiền
+                <button onclick="downloadSampleExcel()" class="w-full mb-3 bg-white text-emerald-700 border border-emerald-300 font-semibold py-2.5 px-4 rounded-xl hover:bg-emerald-100 transition shadow-sm text-sm">
+                    📥 Tải File Excel Mẫu Chuẩn
+                </button>
+                <p class="text-sm text-emerald-800 mb-2">
+                    <b>Chọn file Excel của bạn để tạo hàng loạt:</b>
                 </p>
                 <input type="file" id="excelFile" accept=".xlsx, .xls, .csv" class="w-full text-sm text-gray-700 bg-white p-2 border border-emerald-300 rounded-lg">
-                <p class="text-xs text-emerald-700 mt-2">💡 Hỗ trợ mọi định dạng, tự động nhận diện dữ liệu cực nhạy.</p>
             </div>
         </div>
 
@@ -128,6 +129,18 @@
             }
         }
 
+        // --- TẠO VÀ TẢI FILE EXCEL MẪU CHUẨN ---
+        function downloadSampleExcel() {
+            const ws_data = [
+                ["Tên", "STK", "Ngân Hàng", "Số Tiền"],
+                ["NGUYEN TRONG MINH", "999888999", "NAB", "2000000"]
+            ];
+            const ws = XLSX.utils.aoa_to_sheet(ws_data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "DanhSachQR");
+            XLSX.writeFile(wb, "mau_qr_chuan.xlsx");
+        }
+
         async function handleGenerate() {
             const opt = document.querySelector('input[name="optionType"]:checked').value;
             if (opt === 'op3') {
@@ -137,7 +150,7 @@
             }
         }
 
-        // --- THUẬT TOÁN ĐỌC EXCEL SIÊU THÔNG MINH (BẤT CHẤP MỌI ĐỊNH DẠNG) ---
+        // --- XỬ LÝ HÀNG LOẠT (EXCEL - OPTION 3) ---
         async function processExcel() {
             const fileInput = document.getElementById('excelFile');
             if (!fileInput.files.length) { alert("Vui lòng chọn file Excel!"); return; }
@@ -159,52 +172,53 @@
                     const zip = new JSZip();
                     let count = 0;
 
-                    // Quét toàn bộ các dòng trong file
                     for (let i = 0; i < jsonData.length; i++) {
                         let row = jsonData[i];
                         if (!row || row.length === 0) continue;
 
                         let ten = '';
                         let stk = '';
-                        let nganHang = 'NAB'; // Mặc định nếu không ghi
+                        let nganHang = 'NAB';
                         let rawTien = '';
 
-                        // Lọc từng ô trong dòng để tìm ra dữ liệu chính xác dựa trên đặc điểm
-                        for (let cell of row) {
-                            if (cell === undefined || cell === null) continue;
-                            let s = String(cell).trim();
-                            if (!s) continue;
+                        // Đọc theo vị trí chuẩn (Cột A: Tên, Cột B: STK, Cột C: Ngân hàng, Cột D: Số tiền)
+                        if (row[0] !== undefined) ten = String(row[0]).trim();
+                        if (row[1] !== undefined) stk = String(row[1]).trim();
+                        if (row[2] !== undefined && String(row[2]).trim() !== '') nganHang = String(row[2]).trim();
+                        if (row[3] !== undefined) rawTien = row[3];
 
-                            let lower = s.toLowerCase();
-                            // Bỏ qua dòng tiêu đề
-                            if (lower === 'tên' || lower === 'stk' || lower === 'ngân hàng' || lower === 'số tiền' || lower === 'ten' || lower === 'sotien') {
-                                ten = ''; break; 
-                            }
+                        // Bỏ qua dòng tiêu đề
+                        let lowerTen = ten.toLowerCase();
+                        if (lowerTen === 'tên' || lowerTen === 'ten' || lowerTen === 'chu tai khoan') continue;
 
-                            // Nếu là dãy số từ 6 đến 15 chữ số và chưa có STK -> Nhận diện là STK
-                            if (!stk && /^\d{6,15}$/.test(s)) {
-                                stk = s;
-                            } 
-                            // Nếu là số tiền lớn hơn 1000 và chưa có tiền -> Nhận diện là Số tiền
-                            else if (!rawTien && /^\d{4,12}$/.test(s) && Number(s) > 999) {
-                                rawTien = s;
-                            } 
-                            // Nếu chứa ký tự chữ cái và dài hơn 1 ký tự -> Nhận diện là Tên hoặc Ngân hàng
-                            else if (/[a-zA-ZÀ-ỹ]/.test(s)) {
-                                if (s.length <= 5 && !['nguyen', 'tran', 'le', 'pham', 'hoang'].some(n => lower.includes(n))) {
-                                    nganHang = s; // Tên viết tắt ngân hàng như NAB, VCB, MB...
-                                } else if (!ten) {
-                                    ten = s; // Tên chủ tài khoản
+                        // Dự phòng quét thông minh nếu file bị lệch cột
+                        if (!stk || !ten) {
+                            for (let cell of row) {
+                                if (cell === undefined || cell === null) continue;
+                                let s = String(cell).trim();
+                                if (!s) continue;
+                                let l = s.toLowerCase();
+                                if (l.includes('tên') || l.includes('stk') || l.includes('ngân hàng') || l.includes('số tiền')) break;
+
+                                if (!stk && /^\d{4,15}$/.test(s)) {
+                                    stk = s;
+                                } else if (!rawTien && /^\d{4,12}$/.test(s) && Number(s) > 999) {
+                                    rawTien = s;
+                                } else if (/[a-zA-ZÀ-ỹ]/.test(s)) {
+                                    if (s.length <= 5) {
+                                        nganHang = s;
+                                    } else if (!ten) {
+                                        ten = s;
+                                    }
                                 }
                             }
                         }
 
-                        // Nếu tìm thấy ít nhất Tên và STK thì tiến hành tạo QR
                         if (stk && ten) {
                             let bankBin = detectBankBin(nganHang);
                             let url = `https://img.vietqr.io/image/${bankBin}-${stk}.png?accountName=${encodeURIComponent(ten)}`;
                             
-                            if (rawTien) {
+                            if (rawTien !== undefined && rawTien !== null && rawTien !== '') {
                                 let cleanTien = String(rawTien).replace(/[^0-9]/g, '');
                                 if (Number(cleanTien) > 0) {
                                     url += `&amount=${cleanTien}`;
@@ -232,7 +246,7 @@
                     }
 
                     if (count === 0) {
-                        alert("Không tìm thấy dòng dữ liệu hợp lệ! Hãy chắc chắn bạn đã điền đầy đủ Tên và Số tài khoản vào file.");
+                        alert("Không tìm thấy dòng dữ liệu hợp lệ! Vui lòng sử dụng file mẫu chuẩn bằng cách bấm nút tải phía trên.");
                         return;
                     }
 
