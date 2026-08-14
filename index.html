@@ -74,9 +74,10 @@
             <div class="p-4 bg-emerald-50 rounded-xl border border-emerald-200">
                 <p class="text-sm text-emerald-800 mb-3">
                     <b>Cấu trúc file Excel hỗ trợ:</b><br>
-                    <code class="bg-white px-1 py-0.5 rounded">Tên (Cột A)</code> | <code class="bg-white px-1 py-0.5 rounded">STK (Cột B)</code> | <code class="bg-white px-1 py-0.5 rounded">Ngân Hàng (Cột C)</code> | <code class="bg-white px-1 py-0.5 rounded">Số Tiền (Cột D)</code>
+                    Cột Tên | Cột STK | Cột Ngân Hàng | Cột Số Tiền
                 </p>
-                <input type="file" id="excelFile" accept=".xlsx, .xls" class="w-full text-sm text-gray-700 bg-white p-2 border border-emerald-300 rounded-lg">
+                <input type="file" id="excelFile" accept=".xlsx, .xls, .csv" class="w-full text-sm text-gray-700 bg-white p-2 border border-emerald-300 rounded-lg">
+                <p class="text-xs text-emerald-700 mt-2">💡 Hỗ trợ mọi định dạng, tự động nhận diện dữ liệu cực nhạy.</p>
             </div>
         </div>
 
@@ -136,7 +137,7 @@
             }
         }
 
-        // --- XỬ LÝ HÀNG LOẠT (EXCEL - OPTION 3) CHUẨN XÁC THEO FILE ---
+        // --- THUẬT TOÁN ĐỌC EXCEL SIÊU THÔNG MINH (BẤT CHẤP MỌI ĐỊNH DẠNG) ---
         async function processExcel() {
             const fileInput = document.getElementById('excelFile');
             if (!fileInput.files.length) { alert("Vui lòng chọn file Excel!"); return; }
@@ -155,96 +156,83 @@
                     const sheet = workbook.Sheets[sheetName];
                     
                     const jsonData = XLSX.utils.sheet_to_json(sheet, {header: 1});
-                    
-                    // Khớp chính xác theo ảnh của bạn: Cột A (0)=Tên, Cột B (1)=STK, Cột C (2)=Ngân hàng, Cột D (3)=Số tiền
-                    let colMap = { ten: 0, stk: 1, nganHang: 2, tien: 3 };
-                    let startRow = 1; // Bắt đầu từ dòng 2 (index 1)
-
-                    // Quét tìm dòng tiêu đề nếu có thay đổi vị trí
-                    for (let i = 0; i < jsonData.length; i++) {
-                        let row = jsonData[i];
-                        if (!row) continue;
-                        let found = false;
-                        row.forEach((cell, idx) => {
-                            if (!cell) return;
-                            let text = String(cell).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
-                            if (text.includes('ten') || text.includes('hoten') || text.includes('chutaikhoan')) { colMap.ten = idx; found = true; }
-                            if (text.includes('stk') || text.includes('sotaikhoan') || text.includes('account')) { colMap.stk = idx; found = true; }
-                            if (text.includes('nganhang') || text.includes('bank') || text.includes('nh')) { colMap.nganHang = idx; }
-                            if (text.includes('sotien') || text.includes('tien') || text.includes('amount') || text.includes('thanhtien')) { colMap.tien = idx; }
-                        });
-                        if (found) {
-                            startRow = i + 1;
-                            break;
-                        }
-                    }
-
                     const zip = new JSZip();
                     let count = 0;
 
-                    for (let i = startRow; i < jsonData.length; i++) {
+                    // Quét toàn bộ các dòng trong file
+                    for (let i = 0; i < jsonData.length; i++) {
                         let row = jsonData[i];
                         if (!row || row.length === 0) continue;
 
-                        let ten = row[colMap.ten] !== undefined ? String(row[colMap.ten]).trim() : '';
-                        let stk = row[colMap.stk] !== undefined ? String(row[colMap.stk]).trim() : '';
-                        let nganHang = colMap.nganHang !== undefined && row[colMap.nganHang] !== undefined ? String(row[colMap.nganHang]).trim() : '';
-                        let rawTien = colMap.tien !== undefined && row[colMap.tien] !== undefined ? row[colMap.tien] : '';
+                        let ten = '';
+                        let stk = '';
+                        let nganHang = 'NAB'; // Mặc định nếu không ghi
+                        let rawTien = '';
 
-                        // Quét vét cạn dự phòng nếu cột chỉ định bị trống hoặc lệch
-                        if (!stk || !ten) {
-                            for (let cell of row) {
-                                if (!cell) continue;
-                                let s = String(cell).trim();
-                                if (!stk && /^\d{4,20}$/.test(s)) {
-                                    stk = s;
-                                } else if (!ten && /[a-zA-ZÀ-ỹ]/.test(s) && s.length > 1) {
-                                    let clean = s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-                                    if (!['ten', 'stk', 'ngan hang', 'so tien'].some(h => clean.includes(h))) {
-                                        ten = s;
-                                    }
-                                } else if (!rawTien && /^\d{1,15}$/.test(s) && Number(s) > 999) {
-                                    rawTien = s;
+                        // Lọc từng ô trong dòng để tìm ra dữ liệu chính xác dựa trên đặc điểm
+                        for (let cell of row) {
+                            if (cell === undefined || cell === null) continue;
+                            let s = String(cell).trim();
+                            if (!s) continue;
+
+                            let lower = s.toLowerCase();
+                            // Bỏ qua dòng tiêu đề
+                            if (lower === 'tên' || lower === 'stk' || lower === 'ngân hàng' || lower === 'số tiền' || lower === 'ten' || lower === 'sotien') {
+                                ten = ''; break; 
+                            }
+
+                            // Nếu là dãy số từ 6 đến 15 chữ số và chưa có STK -> Nhận diện là STK
+                            if (!stk && /^\d{6,15}$/.test(s)) {
+                                stk = s;
+                            } 
+                            // Nếu là số tiền lớn hơn 1000 và chưa có tiền -> Nhận diện là Số tiền
+                            else if (!rawTien && /^\d{4,12}$/.test(s) && Number(s) > 999) {
+                                rawTien = s;
+                            } 
+                            // Nếu chứa ký tự chữ cái và dài hơn 1 ký tự -> Nhận diện là Tên hoặc Ngân hàng
+                            else if (/[a-zA-ZÀ-ỹ]/.test(s)) {
+                                if (s.length <= 5 && !['nguyen', 'tran', 'le', 'pham', 'hoang'].some(n => lower.includes(n))) {
+                                    nganHang = s; // Tên viết tắt ngân hàng như NAB, VCB, MB...
+                                } else if (!ten) {
+                                    ten = s; // Tên chủ tài khoản
                                 }
                             }
                         }
 
-                        if (!stk || !ten) continue;
-
-                        let checkHeaderStr = ten.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-                        if (checkHeaderStr === 'ten' || checkHeaderStr === 'hoten' || checkHeaderStr === 'chu tai khoan') continue;
-
-                        let bankBin = detectBankBin(nganHang);
-                        let url = `https://img.vietqr.io/image/${bankBin}-${stk}.png?accountName=${encodeURIComponent(ten)}`;
-                        
-                        if (rawTien !== undefined && rawTien !== null && rawTien !== '') {
-                            let cleanTien = String(rawTien).replace(/[^0-9]/g, '');
-                            if (Number(cleanTien) > 0) {
-                                url += `&amount=${cleanTien}`;
+                        // Nếu tìm thấy ít nhất Tên và STK thì tiến hành tạo QR
+                        if (stk && ten) {
+                            let bankBin = detectBankBin(nganHang);
+                            let url = `https://img.vietqr.io/image/${bankBin}-${stk}.png?accountName=${encodeURIComponent(ten)}`;
+                            
+                            if (rawTien) {
+                                let cleanTien = String(rawTien).replace(/[^0-9]/g, '');
+                                if (Number(cleanTien) > 0) {
+                                    url += `&amount=${cleanTien}`;
+                                }
                             }
-                        }
 
-                        try {
-                            const img = await loadNetworkImage(url);
-                            const canvas = document.createElement('canvas');
-                            canvas.width = img.width;
-                            canvas.height = img.height;
-                            const ctx = canvas.getContext('2d');
-                            ctx.drawImage(img, 0, 0);
+                            try {
+                                const img = await loadNetworkImage(url);
+                                const canvas = document.createElement('canvas');
+                                canvas.width = img.width;
+                                canvas.height = img.height;
+                                const ctx = canvas.getContext('2d');
+                                ctx.drawImage(img, 0, 0);
 
-                            const dataUrl = canvas.toDataURL('image/png');
-                            const base64Data = dataUrl.replace(/^data:image\/png;base64,/, "");
+                                const dataUrl = canvas.toDataURL('image/png');
+                                const base64Data = dataUrl.replace(/^data:image\/png;base64,/, "");
 
-                            let fileName = `QR_${ten.replace(/[^a-zA-Z0-9]/g, '_')}_${stk}.png`;
-                            zip.file(fileName, base64Data, {base64: true});
-                            count++;
-                        } catch (imgErr) {
-                            console.error("Lỗi tải QR cho: " + ten, imgErr);
+                                let fileName = `QR_${ten.replace(/[^a-zA-Z0-9]/g, '_')}_${stk}.png`;
+                                zip.file(fileName, base64Data, {base64: true});
+                                count++;
+                            } catch (imgErr) {
+                                console.error("Lỗi tải QR cho: " + ten, imgErr);
+                            }
                         }
                     }
 
                     if (count === 0) {
-                        alert("Không tìm thấy dòng dữ liệu hợp lệ trong file Excel! Hãy kiểm tra lại file của bạn.");
+                        alert("Không tìm thấy dòng dữ liệu hợp lệ! Hãy chắc chắn bạn đã điền đầy đủ Tên và Số tài khoản vào file.");
                         return;
                     }
 
