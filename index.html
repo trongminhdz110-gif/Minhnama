@@ -27,7 +27,6 @@
                         <span class="font-medium text-blue-900">OP2: MICA FULL</span>
                     </label>
                 </div>
-                <!-- OPTION 3: EXCEL -->
                 <div>
                     <label class="flex items-center cursor-pointer">
                         <input type="radio" name="optionType" value="op3" onchange="toggleMode()" class="mr-2 w-4 h-4 text-emerald-600">
@@ -37,7 +36,7 @@
             </div>
         </div>
 
-        <!-- NHÓM NHẬP TAY (Dành cho OP1 & OP2) -->
+        <!-- NHÓM NHẬP TAY -->
         <div id="manualInputGroup" class="space-y-4">
             <div>
                 <label class="block text-gray-700 font-semibold mb-1">Chọn Ngân hàng:</label>
@@ -63,35 +62,22 @@
                 <label class="block text-gray-700 font-semibold mb-1">Mã tài khoản (nhập 0 để ẩn):</label>
                 <input type="text" id="mtk" value="0" class="w-full border border-gray-300 p-2.5 rounded-lg uppercase">
             </div>
-            <div class="p-3 bg-blue-50 rounded-xl border border-blue-200 text-xs text-blue-800">
-                💡 <b>Template đã được tải sẵn từ GitHub:</b> Hệ thống tự động sử dụng file mẫu tương ứng với OP1 hoặc OP2.
-            </div>
         </div>
 
-        <!-- NHÓM EXCEL (Dành cho OP3) -->
+        <!-- NHÓM EXCEL -->
         <div id="excelInputGroup" class="space-y-4 hidden">
             <div class="p-4 bg-emerald-50 rounded-xl border border-emerald-200">
                 <button onclick="downloadSampleExcel()" class="w-full mb-3 bg-white text-emerald-700 border border-emerald-300 font-semibold py-2.5 px-4 rounded-xl hover:bg-emerald-100 transition shadow-sm text-sm">
-                    📥 Tải File Excel Mẫu Chuẩn (Nên Dùng)
+                    📥 Tải File Excel Mẫu
                 </button>
-                <p class="text-sm text-emerald-800 mb-2">
-                    <b>Chọn file Excel của bạn để tạo hàng loạt:</b>
-                </p>
                 <input type="file" id="excelFile" accept=".xlsx, .xls, .csv" class="w-full text-sm text-gray-700 bg-white p-2 border border-emerald-300 rounded-lg">
-                
-                <div id="excelLog" class="mt-3 p-3 bg-white border border-emerald-200 rounded-lg text-xs font-mono text-gray-700 max-h-40 overflow-y-auto hidden">
-                </div>
+                <div id="excelLog" class="mt-3 p-3 bg-white border border-emerald-200 rounded-lg text-xs font-mono text-gray-700 max-h-40 overflow-y-auto hidden"></div>
             </div>
         </div>
 
-        <!-- Nút xử lý -->
         <button id="actionBtn" onclick="handleGenerate()" class="w-full bg-blue-600 text-white font-bold p-3 mt-6 rounded-xl hover:bg-blue-700 transition shadow-md">Tạo Mã QR</button>
+        <div id="loadingStatus" class="hidden mt-4 text-center text-sm font-bold text-amber-600">Đang xử lý...</div>
 
-        <div id="loadingStatus" class="hidden mt-4 text-center text-sm font-bold text-amber-600">
-            Đang xử lý tạo hàng loạt... Vui lòng đợi!
-        </div>
-
-        <!-- Hiển thị kết quả OP1/OP2 -->
         <div class="mt-6 text-center">
             <canvas id="resultCanvas" class="border border-gray-200 max-w-full mx-auto rounded-lg shadow-sm hidden"></canvas>
             <div class="mt-4 flex justify-center gap-3">
@@ -102,8 +88,8 @@
     </div>
 
     <script>
-        const SIZE_CTK = 65; 
-        const SIZE_STK = 65;
+        const FONT_CTK = 65;
+        const FONT_STK = 65;
 
         function toggleMode() {
             const opt = document.querySelector('input[name="optionType"]:checked').value;
@@ -111,219 +97,50 @@
             const excelGrp = document.getElementById('excelInputGroup');
             const btn = document.getElementById('actionBtn');
             const canvas = document.getElementById('resultCanvas');
-            const dlBtns = document.getElementById('downloadBtn');
-            const pdfBtn = document.getElementById('pdfBtn');
-
-            canvas.classList.add('hidden'); dlBtns.classList.add('hidden'); pdfBtn.classList.add('hidden');
+            canvas.classList.add('hidden');
+            document.getElementById('downloadBtn').classList.add('hidden');
+            document.getElementById('pdfBtn').classList.add('hidden');
 
             if (opt === 'op3') {
-                manualGrp.classList.add('hidden');
-                excelGrp.classList.remove('hidden');
-                btn.innerText = "Tạo & Tải Xuống Hàng Loạt (ZIP)";
-                btn.className = "w-full bg-emerald-600 text-white font-bold p-3 mt-6 rounded-xl hover:bg-emerald-700 transition shadow-md";
+                manualGrp.classList.add('hidden'); excelGrp.classList.remove('hidden');
             } else {
-                manualGrp.classList.remove('hidden');
-                excelGrp.classList.add('hidden');
-                btn.innerText = "Tạo Mã QR & Ghép Thiết Kế";
-                btn.className = "w-full bg-blue-600 text-white font-bold p-3 mt-6 rounded-xl hover:bg-blue-700 transition shadow-md";
+                manualGrp.classList.remove('hidden'); excelGrp.classList.add('hidden');
             }
         }
 
-        function downloadSampleExcel() {
-            const ws_data = [
-                ["Tên", "STK", "Ngân Hàng", "Số Tiền"],
-                ["NGUYEN TRONG MINH", "999888999", "NAB", "2,000,000"],
-                ["TRAN VAN A", "123456789", "VCB", "500,000"]
-            ];
-            const ws = XLSX.utils.aoa_to_sheet(ws_data);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "DanhSachQR");
-            XLSX.writeFile(wb, "mau_qr_chuan.xlsx");
-        }
+        function drawLeftWrappedText(ctx, text, startX, centerY, fontSize, lineHeight, maxWordsPerLine = 7, isBold = true) {
+            ctx.font = `${isBold ? 'bold' : 'normal'} ${fontSize}px Arial`;
+            ctx.fillStyle = "#FF0000"; 
+            ctx.textAlign = "left"; 
+            ctx.textBaseline = "middle";
 
-        async function handleGenerate() {
-            const opt = document.querySelector('input[name="optionType"]:checked').value;
-            if (opt === 'op3') {
-                processExcel();
-            } else {
-                processSingleImage(opt);
-            }
-        }
-
-        async function processExcel() {
-            const fileInput = document.getElementById('excelFile');
-            const logBox = document.getElementById('excelLog');
-            logBox.classList.remove('hidden');
-            logBox.innerHTML = "Đang đọc file Excel...<br>";
-
-            if (!fileInput.files.length) { 
-                logBox.innerHTML += "<span class='text-red-600'>Lỗi: Chưa chọn file!</span>";
-                alert("Vui lòng chọn file Excel!"); 
-                return; 
+            const words = text.split(' ');
+            let lines = [];
+            for (let i = 0; i < words.length; i += maxWordsPerLine) {
+                lines.push(words.slice(i, i + maxWordsPerLine).join(' '));
             }
 
-            document.getElementById('actionBtn').disabled = true;
-            document.getElementById('loadingStatus').classList.remove('hidden');
+            let startY = centerY - ((lines.length - 1) * lineHeight) / 2;
 
-            const file = fileInput.files[0];
-            const reader = new FileReader();
-
-            reader.onload = async (e) => {
-                try {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, {type: 'array'});
-                    const sheetName = workbook.SheetNames[0];
-                    const sheet = workbook.Sheets[sheetName];
-                    
-                    const rows = XLSX.utils.sheet_to_json(sheet, {defval: ""});
-                    logBox.innerHTML += `Đọc thành công sheet "${sheetName}". Tổng số dòng dữ liệu: ${rows.length}<br>`;
-
-                    const zip = new JSZip();
-                    let count = 0;
-
-                    for (let i = 0; i < rows.length; i++) {
-                        let row = rows[i];
-                        
-                        let ten = "";
-                        let stk = "";
-                        let nganHang = "NAB";
-                        let rawTien = "";
-
-                        for (let key in row) {
-                            let k = key.toLowerCase().trim();
-                            let val = String(row[key] || "").trim();
-                            if (k.includes('tên') || k.includes('ten') || k.includes('chủ tài khoản')) {
-                                if (!ten) ten = val;
-                            } else if (k.includes('stk') || k.includes('số tài khoản') || k.includes('so tai khoan')) {
-                                if (!stk) stk = val;
-                            } else if (k.includes('ngân hàng') || k.includes('ngan hang') || k.includes('nh')) {
-                                if (!nganHang || nganHang === "NAB") nganHang = val;
-                            } else if (k.includes('tiền') || k.includes('tien') || k.includes('amount')) {
-                                if (!rawTien) rawTien = val;
-                            }
-                        }
-
-                        if (!stk) continue;
-
-                        let cleanAmount = rawTien.replace(/[^0-9]/g, '');
-                        logBox.innerHTML += `Dòng ${i+1}: Tên="${ten}", STK="${stk}", NH="${nganHang}", Tiền="${cleanAmount}"<br>`;
-
-                        await new Promise(resolve => setTimeout(resolve, 500));
-
-                        let bankBin = detectBankBin(nganHang);
-                        let url = `https://img.vietqr.io/image/${bankBin}-${stk}-compact.png?accountName=${encodeURIComponent(ten)}`;
-                        if (cleanAmount && Number(cleanAmount) > 0) {
-                            url += `&amount=${cleanAmount}`;
-                        }
-
-                        try {
-                            const qrImg = await loadNetworkImage(url);
-                            
-                            const canvas = document.createElement('canvas');
-                            canvas.width = 600;
-                            canvas.height = 760;
-                            const ctx = canvas.getContext('2d');
-                            
-                            ctx.fillStyle = "#FFFFFF";
-                            ctx.fillRect(0, 0, canvas.width, canvas.height);
-                            
-                            let qrSize = 500;
-                            let qrX = (canvas.width - qrSize) / 2;
-                            ctx.drawImage(qrImg, qrX, 30, qrSize, qrSize);
-                            
-                            ctx.textAlign = "center";
-                            ctx.fillStyle = "#1F2937";
-                            ctx.font = "bold 24px Arial";
-                            ctx.fillText(ten.toUpperCase(), canvas.width / 2, 575);
-                            
-                            ctx.font = "18px Arial";
-                            ctx.fillStyle = "#4B5563";
-                            ctx.fillText(`STK: ${stk} (${nganHang.toUpperCase()})`, canvas.width / 2, 615);
-                            
-                            if (cleanAmount && Number(cleanAmount) > 0) {
-                                let formattedAmount = Number(cleanAmount).toLocaleString('vi-VN') + " VNĐ";
-                                ctx.font = "bold 22px Arial";
-                                ctx.fillStyle = "#DC2626";
-                                ctx.fillText(`Số tiền: ${formattedAmount}`, canvas.width / 2, 665);
-                            }
-
-                            const dataUrl = canvas.toDataURL('image/png');
-                            const base64Data = dataUrl.replace(/^data:image\/png;base64,/, "");
-
-                            let safeTenName = ten ? ten.replace(/[^a-zA-Z0-9]/g, '_') : 'KH';
-                            let fileName = `QR_${safeTenName}_${stk}.png`;
-                            zip.file(fileName, base64Data, {base64: true});
-                            count++;
-                        } catch (imgErr) {
-                            logBox.innerHTML += `<span class='text-red-600'>⚠️ Lỗi dòng ${i+1}: Không thể tải ảnh QR (STK: ${stk})</span><br>`;
-                        }
-                    }
-
-                    if (count === 0) {
-                        logBox.innerHTML += `<span class='text-red-600 font-bold'>❌ Không tạo được mã QR nào.</span><br>`;
-                        alert("Không tìm thấy dữ liệu hợp lệ!");
-                        return;
-                    }
-
-                    logBox.innerHTML += `<span class='text-emerald-700 font-bold'>🎉 Đã hoàn tất! Đang tải xuống file nén ZIP...</span><br>`;
-                    const zipContent = await zip.generateAsync({type: "blob"});
-                    const link = document.createElement('a');
-                    link.href = URL.createObjectURL(zipContent);
-                    link.download = "QR_ThanhToan_HangLoat.zip";
-                    link.click();
-                    
-                    alert(`Đã tạo thành công ${count} mã QR!`);
-                } catch (err) {
-                    console.error(err);
-                    logBox.innerHTML += `<span class='text-red-600 font-bold'>Lỗi hệ thống: ${err.message}</span><br>`;
-                    alert("Có lỗi xảy ra khi xử lý file Excel.");
-                } finally {
-                    document.getElementById('actionBtn').disabled = false;
-                    document.getElementById('loadingStatus').classList.add('hidden');
-                }
-            };
-            reader.readAsArrayBuffer(file);
-        }
-
-        function detectBankBin(bankStr) {
-            const str = String(bankStr).toUpperCase().trim();
-            if (str.includes('VCB') || str.includes('VIETCOM')) return '970436';
-            if (str.includes('MB')) return '970422';
-            if (str.includes('TCB') || str.includes('TECHCOM')) return '970407';
-            if (str.includes('NAB') || str.includes('NAM A')) return '970428';
-            if (str.includes('CTG') || str.includes('VIETIN')) return '970415';
-            if (str.includes('BIDV')) return '970418';
-            if (str.includes('VBA') || str.includes('AGRI')) return '970405';
-            if (str.includes('VPB')) return '970432';
-            if (str.includes('STB') || str.includes('SACOM')) return '970403';
-            if (str.includes('ACB')) return '970416';
-            if (!isNaN(str) && str.length >= 6) return str;
-            return '970428';
-        }
-
-        function drawFixedText(ctx, text, x, y, size, isBold = true) {
-            ctx.fillStyle = "#FF0000"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-            ctx.font = `${isBold ? 'bold' : 'normal'} ${size}px Arial`; ctx.fillText(text, x, y);
+            lines.forEach((line, index) => {
+                ctx.fillText(line, startX, startY + (index * lineHeight));
+            });
         }
 
         async function processSingleImage(selectedOption) {
             const ctkVal = document.getElementById('ctk').value.trim();
             const stkVal = document.getElementById('stk').value.trim();
             const mtkVal = document.getElementById('mtk').value.trim();
-            
             if(!ctkVal || !stkVal) { alert("Nhập đủ CTK và STK!"); return; }
 
-            let templatePath = selectedOption === 'op1' ? 'template_op1.jpg' : 'template_op2.jpg';
-
+            const templatePath = selectedOption === 'op1' ? 'template_op1.jpg' : 'template_op2.jpg';
             const vietqrUrl = `https://img.vietqr.io/image/${document.getElementById('bankBin').value}-${stkVal}-compact.png?accountName=${encodeURIComponent(ctkVal)}`;
+            
             const btn = document.getElementById('actionBtn');
             btn.disabled = true; btn.innerText = "Đang xử lý...";
 
             try {
-                const [rawQrImg, templateImg] = await Promise.all([
-                    loadNetworkImage(vietqrUrl), loadNetworkImage(templatePath)
-                ]);
-
+                const [rawQrImg, templateImg] = await Promise.all([loadNetworkImage(vietqrUrl), loadNetworkImage(templatePath)]);
                 const canvas = document.getElementById('resultCanvas');
                 const ctx = canvas.getContext('2d');
                 canvas.width = templateImg.width; canvas.height = templateImg.height;
@@ -341,33 +158,54 @@
                 boxes.forEach(box => { ctx.drawImage(croppedQR, box.x, box.y, box.w, box.h); });
 
                 textBoxes.forEach((box, index) => {
-                    let centerX = box.x + box.w / 2, centerY = box.y + box.h / 2;
-                    let ctkSize = SIZE_CTK;
-                    let stkSize = SIZE_STK;
-                    let yOffset = 50;
+                    let leftX = box.x + 35;
+                    let centerY = box.y + box.h / 2;
 
-                    // Tùy chỉnh riêng kích thước và khoảng cách cho ô loa vàng (ô số 3) của OP1
+                    // Xử lý riêng cho ô nhỏ dưới cùng của OP1 (index === 2): Chỉ hiển thị STK
                     if (selectedOption === 'op1' && index === 2) {
-                        ctkSize = 34;
-                        stkSize = 26;
-                        yOffset = 22;
+                        let stkText = "STK: " + stkVal;
+                        if(mtkVal && mtkVal !== "0") stkText += " - MTK: " + mtkVal;
+                        drawLeftWrappedText(ctx, stkText, leftX, centerY, 32, 40, 5, true);
+                        return; // Bỏ qua không vẽ CTK cho ô này
                     }
 
-                    drawFixedText(ctx, "CTK: " + ctkVal, centerX, centerY - yOffset, ctkSize);
+                    let ctkSize = FONT_CTK;
+                    let stkSize = FONT_STK;
+                    let ctkLineHeight = 75;
+                    let stkLineHeight = 55;
+                    let ctkYOffset = -45;
+                    let stkYOffset = 55;
+                    let maxWords = 7;
+
+                    // Vẽ CTK căn lề trái, ngắt dòng khoảng 7 chữ
+                    drawLeftWrappedText(ctx, "CTK: " + ctkVal, leftX, centerY + ctkYOffset, ctkSize, ctkLineHeight, maxWords, true);
+                    
+                    // Vẽ STK căn lề trái
                     let stkText = "STK: " + stkVal;
                     if(mtkVal && mtkVal !== "0") stkText += " - MTK: " + mtkVal;
-                    drawFixedText(ctx, stkText, centerX, centerY + yOffset, stkSize);
+                    drawLeftWrappedText(ctx, stkText, leftX, centerY + stkYOffset, stkSize, stkLineHeight, 6, true);
                 });
 
                 document.getElementById('downloadBtn').href = canvas.toDataURL("image/jpeg", 0.95);
                 document.getElementById('downloadBtn').classList.remove('hidden');
                 document.getElementById('pdfBtn').classList.remove('hidden');
-            } catch (e) { 
-                alert("Lỗi khi tải template hoặc tạo ảnh! Hãy đảm bảo bạn đã đặt file template_op1.jpg và template_op2.jpg lên GitHub."); 
-                console.error(e); 
-            } finally { 
-                btn.disabled = false; btn.innerText = "Tạo Mã QR & Ghép Thiết Kế"; 
-            }
+            } catch (e) { alert("Lỗi tải template! Đảm bảo file template nằm trên GitHub."); console.error(e); } 
+            finally { btn.disabled = false; btn.innerText = "Tạo Mã QR & Ghép Thiết Kế"; }
+        }
+
+        async function handleGenerate() {
+            const opt = document.querySelector('input[name="optionType"]:checked').value;
+            if (opt === 'op3') { processExcel(); } else { processSingleImage(opt); }
+        }
+
+        async function loadNetworkImage(url) { return new Promise((res, rej) => { const i = new Image(); i.crossOrigin = "Anonymous"; i.onload = () => res(i); i.onerror = rej; i.src = url; }); }
+
+        function cropPureQR(img) {
+            const size = Math.min(img.width, img.height) * 0.72;
+            const c = document.createElement('canvas'); const ctx = c.getContext('2d');
+            c.width = c.height = size;
+            ctx.drawImage(img, (img.width-size)/2, img.height*0.14, size, size, 0, 0, size, size);
+            return c;
         }
 
         function downloadPDF() {
@@ -376,24 +214,6 @@
             const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: [190, 190 * (canvas.height / canvas.width)] });
             pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, 190, 190 * (canvas.height / canvas.width));
             pdf.save('bang-mica.pdf');
-        }
-
-        function loadNetworkImage(url) { 
-            return new Promise((resolve, reject) => { 
-                const i = new Image(); 
-                i.crossOrigin = "Anonymous"; 
-                i.onload = () => resolve(i); 
-                i.onerror = (err) => reject(err);
-                i.src = url; 
-            }); 
-        }
-
-        function cropPureQR(img) {
-            const size = Math.min(img.width, img.height) * 0.72;
-            const c = document.createElement('canvas'); const ctx = c.getContext('2d');
-            c.width = c.height = size;
-            ctx.drawImage(img, (img.width-size)/2, img.height*0.14, size, size, 0, 0, size, size);
-            return c;
         }
     </script>
 </body>
