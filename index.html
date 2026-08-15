@@ -158,32 +158,35 @@
                 boxes.forEach(box => { ctx.drawImage(croppedQR, box.x, box.y, box.w, box.h); });
 
                 textBoxes.forEach((box, index) => {
-                    let leftX = box.x + 35;
                     let centerY = box.y + box.h / 2;
 
-                    // Xử lý riêng cho ô nhỏ dưới cùng của OP1 (index === 2): Chỉ hiển thị STK
+                    // Ô nhỏ dưới cùng của OP1 (index === 2): Chỉ hiển thị STK, căn giữa, chữ to
                     if (selectedOption === 'op1' && index === 2) {
+                        let centerX = box.x + box.w / 2;
                         let stkText = "STK: " + stkVal;
                         if(mtkVal && mtkVal !== "0") stkText += " - MTK: " + mtkVal;
-                        drawLeftWrappedText(ctx, stkText, leftX, centerY, 32, 40, 5, true);
-                        return; // Bỏ qua không vẽ CTK cho ô này
+                        
+                        ctx.font = `bold ${FONT_STK}px Arial`;
+                        ctx.fillStyle = "#FF0000"; 
+                        ctx.textAlign = "center"; 
+                        ctx.textBaseline = "middle";
+                        ctx.fillText(stkText, centerX, centerY);
+                        return;
                     }
 
-                    let ctkSize = FONT_CTK;
-                    let stkSize = FONT_STK;
-                    let ctkLineHeight = 75;
-                    let stkLineHeight = 55;
-                    let ctkYOffset = -45;
-                    let stkYOffset = 55;
+                    let leftX = box.x + 35;
+                    let lineSpacing = 85; // Tăng dãn dòng ra cho thoáng và gọn
+                    let ctkYOffset = -65;
+                    let stkYOffset = 65;
                     let maxWords = 7;
 
                     // Vẽ CTK căn lề trái, ngắt dòng khoảng 7 chữ
-                    drawLeftWrappedText(ctx, "CTK: " + ctkVal, leftX, centerY + ctkYOffset, ctkSize, ctkLineHeight, maxWords, true);
+                    drawLeftWrappedText(ctx, "CTK: " + ctkVal, leftX, centerY + ctkYOffset, FONT_CTK, lineSpacing, maxWords, true);
                     
                     // Vẽ STK căn lề trái
                     let stkText = "STK: " + stkVal;
                     if(mtkVal && mtkVal !== "0") stkText += " - MTK: " + mtkVal;
-                    drawLeftWrappedText(ctx, stkText, leftX, centerY + stkYOffset, stkSize, stkLineHeight, 6, true);
+                    drawLeftWrappedText(ctx, stkText, leftX, centerY + stkYOffset, FONT_STK, lineSpacing, 6, true);
                 });
 
                 document.getElementById('downloadBtn').href = canvas.toDataURL("image/jpeg", 0.95);
@@ -218,3 +221,4 @@
     </script>
 </body>
 </html>
+
