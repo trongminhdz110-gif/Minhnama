@@ -27,16 +27,9 @@
                         <span class="font-medium text-blue-900">OP2: MICA FULL</span>
                     </label>
                 </div>
-                <div>
-                    <label class="flex items-center cursor-pointer">
-                        <input type="radio" name="optionType" value="op3" onchange="toggleMode()" class="mr-2 w-4 h-4 text-emerald-600">
-                        <span class="font-bold text-emerald-700">OP3: Tạo QR Hàng Loạt (Up file Excel)</span>
-                    </label>
-                </div>
             </div>
         </div>
 
-        <!-- NHÓM NHẬP TAY -->
         <div id="manualInputGroup" class="space-y-4">
             <div>
                 <label class="block text-gray-700 font-semibold mb-1">Chọn Ngân hàng:</label>
@@ -64,46 +57,36 @@
             </div>
         </div>
 
-        <!-- NHÓM EXCEL -->
-        <div id="excelInputGroup" class="space-y-4 hidden">
-            <div class="p-4 bg-emerald-50 rounded-xl border border-emerald-200">
-                <button onclick="downloadSampleExcel()" class="w-full mb-3 bg-white text-emerald-700 border border-emerald-300 font-semibold py-2.5 px-4 rounded-xl hover:bg-emerald-100 transition shadow-sm text-sm">
-                    📥 Tải File Excel Mẫu
-                </button>
-                <input type="file" id="excelFile" accept=".xlsx, .xls, .csv" class="w-full text-sm text-gray-700 bg-white p-2 border border-emerald-300 rounded-lg">
-                <div id="excelLog" class="mt-3 p-3 bg-white border border-emerald-200 rounded-lg text-xs font-mono text-gray-700 max-h-40 overflow-y-auto hidden"></div>
-            </div>
-        </div>
-
         <button id="actionBtn" onclick="handleGenerate()" class="w-full bg-blue-600 text-white font-bold p-3 mt-6 rounded-xl hover:bg-blue-700 transition shadow-md">Tạo Mã QR</button>
-        <div id="loadingStatus" class="hidden mt-4 text-center text-sm font-bold text-amber-600">Đang xử lý...</div>
 
         <div class="mt-6 text-center">
             <canvas id="resultCanvas" class="border border-gray-200 max-w-full mx-auto rounded-lg shadow-sm hidden"></canvas>
             <div class="mt-4 flex justify-center gap-3">
                 <a id="downloadBtn" class="bg-emerald-600 text-white font-bold px-5 py-2.5 rounded-xl hidden" download="bang-mica.jpg">Tải ảnh JPG</a>
-                <button onclick="downloadPDF()" id="pdfBtn" class="bg-rose-600 text-white font-bold px-5 py-2.5 rounded-xl hidden hover:bg-rose-700 transition shadow-sm">Tải file PDF</button>
             </div>
         </div>
     </div>
 
     <script>
         const FONT_SIZE = 65;
-        const LINE_SPACING = 90; // Dãn dòng rộng
+        const LINE_SPACING = 75; // Đã giảm dãn dòng cho gọn hơn
 
         function toggleMode() {
-            const opt = document.querySelector('input[name="optionType"]:checked').value;
-            const manualGrp = document.getElementById('manualInputGroup');
-            const excelGrp = document.getElementById('excelInputGroup');
             document.getElementById('resultCanvas').classList.add('hidden');
             document.getElementById('downloadBtn').classList.add('hidden');
-            document.getElementById('pdfBtn').classList.add('hidden');
+        }
 
-            if (opt === 'op3') {
-                manualGrp.classList.add('hidden'); excelGrp.classList.remove('hidden');
-            } else {
-                manualGrp.classList.remove('hidden'); excelGrp.classList.add('hidden');
-            }
+        // Tự động co chữ cho ô nhỏ (cái loa)
+        function drawFitText(ctx, text, x, y, maxWidth, maxHeight) {
+            let size = 65;
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            do {
+                ctx.font = `bold ${size}px Arial`;
+                size -= 2;
+            } while (ctx.measureText(text).width > maxWidth && size > 20);
+            ctx.fillStyle = "#FF0000";
+            ctx.fillText(text, x, y);
         }
 
         function drawWrappedText(ctx, label, text, startX, startY, maxWidth, maxWordsPerLine = 5) {
@@ -126,17 +109,16 @@
             return lines.length * LINE_SPACING;
         }
 
-        async function processSingleImage(selectedOption) {
+        async function handleGenerate() {
             const ctk = document.getElementById('ctk').value.trim();
             const stk = document.getElementById('stk').value.trim();
             const mtk = document.getElementById('mtk').value.trim();
+            const selectedOption = document.querySelector('input[name="optionType"]:checked').value;
+
             if(!ctk || !stk) { alert("Nhập đủ CTK và STK!"); return; }
 
             const templatePath = selectedOption === 'op1' ? 'template_op1.jpg' : 'template_op2.jpg';
             const vietqrUrl = `https://img.vietqr.io/image/${document.getElementById('bankBin').value}-${stk}-compact.png?accountName=${encodeURIComponent(ctk)}`;
-            
-            const btn = document.getElementById('actionBtn');
-            btn.disabled = true; btn.innerText = "Đang xử lý...";
 
             try {
                 const [rawQrImg, templateImg] = await Promise.all([loadNetworkImage(vietqrUrl), loadNetworkImage(templatePath)]);
@@ -157,10 +139,9 @@
                 boxes.forEach(box => { ctx.drawImage(croppedQR, box.x, box.y, box.w, box.h); });
 
                 textBoxes.forEach((box, index) => {
+                    // Xử lý ô nhỏ OP1 - Gọi hàm tự động co chữ
                     if (selectedOption === 'op1' && index === 2) {
-                        ctx.font = `bold ${FONT_SIZE + 20}px Arial`;
-                        ctx.fillStyle = "#FF0000"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-                        ctx.fillText("STK: " + stk, box.x + box.w/2, box.y + box.h/2);
+                        drawFitText(ctx, "STK: " + stk, box.x + box.w/2, box.y + box.h/2, box.w - 20);
                         return;
                     }
                     
@@ -168,7 +149,7 @@
                     curY += drawWrappedText(ctx, "CTK:", ctk, box.x + 30, curY, box.w);
                     curY += 20;
                     curY += drawWrappedText(ctx, "STK:", stk, box.x + 30, curY, box.w);
-                    if(mtk && mtk !== "0") {
+                    if(mtk !== "0") {
                         curY += 20;
                         drawWrappedText(ctx, "MTK:", mtk, box.x + 30, curY, box.w);
                     }
@@ -176,23 +157,7 @@
 
                 document.getElementById('downloadBtn').href = canvas.toDataURL("image/jpeg", 0.95);
                 document.getElementById('downloadBtn').classList.remove('hidden');
-                document.getElementById('pdfBtn').classList.remove('hidden');
-            } catch (e) { alert("Lỗi template! Kiểm tra file trên GitHub."); } 
-            finally { btn.disabled = false; btn.innerText = "Tạo Mã QR"; }
-        }
-
-        async function handleGenerate() {
-            const opt = document.querySelector('input[name="optionType"]:checked').value;
-            if (opt === 'op3') { alert("Tính năng Excel đang sẵn sàng!"); } else { processSingleImage(opt); }
-        }
-
-        function downloadSampleExcel() {
-            const ws = XLSX.utils.json_to_sheet([
-                { "Ngân Hàng": "970428", "Tên Chủ Tài Khoản": "NGUYEN VAN A", "Số Tài Khoản": "123456789", "Mã Tài Khoản": "0" }
-            ]);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "DanhSach");
-            XLSX.writeFile(wb, "mau_qr_hang_loat.xlsx");
+            } catch (e) { alert("Lỗi template! Kiểm tra file trên GitHub."); }
         }
 
         async function loadNetworkImage(url) { return new Promise((res, rej) => { const i = new Image(); i.crossOrigin = "Anonymous"; i.onload = () => res(i); i.onerror = rej; i.src = url; }); }
@@ -203,14 +168,6 @@
             c.width = c.height = size;
             ctx.drawImage(img, (img.width-size)/2, img.height*0.14, size, size, 0, 0, size, size);
             return c;
-        }
-
-        function downloadPDF() {
-            const canvas = document.getElementById('resultCanvas');
-            const { jsPDF } = window.jspdf;
-            const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: [190, 190 * (canvas.height / canvas.width)] });
-            pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, 190, 190 * (canvas.height / canvas.width));
-            pdf.save('bang-mica.pdf');
         }
     </script>
 </body>
