@@ -89,7 +89,7 @@
 
     <script>
         const FONT_SIZE = 65;
-        const LINE_SPACING = 75; // Dãn dòng gọn gàng
+        const LINE_SPACING = 75;
 
         function toggleMode() {
             const opt = document.querySelector('input[name="optionType"]:checked').value;
@@ -119,7 +119,8 @@
             ctx.fillText(text, x, y);
         }
 
-        function drawWrappedText(ctx, label, text, startX, startY, maxWidth, maxWordsPerLine = 5) {
+        // Tối đa 6 từ mỗi dòng (tính cả nhãn)
+        function drawWrappedText(ctx, label, text, startX, startY, maxWidth, maxWordsPerLine = 6) {
             ctx.font = `bold ${FONT_SIZE}px Arial`;
             ctx.fillStyle = "#FF0000";
             ctx.textAlign = "left";
@@ -145,8 +146,11 @@
             const mtk = document.getElementById('mtk').value.trim();
             if(!ctk || !stk) { alert("Nhập đủ CTK và STK!"); return; }
 
+            // Mã TK = 0 lấy STK gửi VietQR, Mã TK # 0 lấy Mã TK gửi VietQR
+            const accountForQr = (mtk && mtk !== "0") ? mtk : stk;
+
             const templatePath = selectedOption === 'op1' ? 'template_op1.jpg' : 'template_op2.jpg';
-            const vietqrUrl = `https://img.vietqr.io/image/${document.getElementById('bankBin').value}-${stk}-compact.png?accountName=${encodeURIComponent(ctk)}`;
+            const vietqrUrl = `https://img.vietqr.io/image/${document.getElementById('bankBin').value}-${accountForQr}-compact.png?accountName=${encodeURIComponent(ctk)}`;
             
             const btn = document.getElementById('actionBtn');
             btn.disabled = true; btn.innerText = "Đang xử lý...";
