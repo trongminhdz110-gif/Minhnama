@@ -156,7 +156,7 @@
             return c;
         }
 
-        // Vẽ mẫu QR định mức kèm thông tin bên dưới
+        // Vẽ mẫu QR định mức kèm thông tin bên dưới (cho OP4 và OP3)
         function drawStandardAmountQR(ctx, qrImg, name, stk, amount) {
             ctx.fillStyle = "#FFFFFF";
             ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
@@ -188,7 +188,7 @@
             }
         }
 
-        // Xử lý OP3 (Hàng loạt qua Excel - Đã bỏ cột MTK, cập nhật hiển thị tiến trình chi tiết vào log)
+        // Xử lý OP3 (Hàng loạt qua Excel - Đã bỏ cột MTK, hiển thị tiến trình chi tiết vào log)
         async function processExcelBatch() {
             const fileInput = document.getElementById('excelFile');
             const logDiv = document.getElementById('excelLog');
@@ -221,7 +221,6 @@
                         let r = rows[i];
                         if(!r || r.length === 0) continue;
                         
-                        // Cấu trúc mới 4 cột: [0]: Ngân hàng, [1]: Tên, [2]: STK, [3]: Số tiền
                         let bankBin = String(r[0] || '970428').trim();
                         let ctk = String(r[1] || '').trim().toUpperCase();
                         let stk = String(r[2] || '').trim();
@@ -229,7 +228,6 @@
 
                         if(!ctk || !stk) continue;
 
-                        // Hiển thị chi tiết tiến trình quét từng dòng vào khung log
                         logDiv.innerText = `Đang xử lý dòng ${i}/${totalRows}\nSTK: ${stk}\nTên: ${ctk}`;
 
                         let vietqrUrl = `https://img.vietqr.io/image/${bankBin}-${stk}-compact.png?accountName=${encodeURIComponent(ctk)}${amount ? '&amount='+amount : ''}`;
@@ -305,28 +303,46 @@
             } catch (e) { alert("Lỗi khi tạo file!"); } finally { btn.disabled = false; btn.innerText = "Tạo Mã QR"; }
         }
 
+        // Xử lý OP1 & OP2 (Dùng template sẵn, cắt QR sạch dán vào đúng tọa độ)
         async function processSingleImage(opt) {
             const ctk = document.getElementById('ctk').value.trim();
             const stk = document.getElementById('stk').value.trim();
             const mtk = document.getElementById('mtk').value.trim();
+            const bankBin = document.getElementById('bankBin').value;
             if(!ctk || !stk) return alert("Nhập đủ CTK và STK!");
+            
             const btn = document.getElementById('actionBtn');
             btn.disabled = true; btn.innerText = "Đang xử lý...";
             try {
                 const templateImg = await loadNetworkImage(opt === 'op1' ? 'template_op1.jpg' : 'template_op2.jpg');
-                const rawQrImg = await loadNetworkImage(`https://img.vietqr.io/image/970428-${mtk !== "0" ? mtk : stk}-compact.png?accountName=${encodeURIComponent(ctk)}`);
+                const targetStk = (mtk && mtk !== "0") ? mtk : stk;
+                const rawQrImg = await loadNetworkImage(`https://img.vietqr.io/image/${bankBin}-${targetStk}-compact.png?accountName=${encodeURIComponent(ctk)}`);
+                
                 const canvas = document.getElementById('resultCanvas');
                 canvas.width = templateImg.width; canvas.height = templateImg.height;
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(templateImg, 0, 0);
-                const boxes = opt === 'op1' ? [{x: 339, y: 367, w: 1132, h: 1132}, {x: 1836, y: 369, w: 1127, h: 1126}, {x: 266, y: 2532, w: 761, h: 709}] : [{x: 339, y: 367, w: 1132, h: 1132}, {x: 1836, y: 369, w: 1127, h: 1126}, {x: 339, y: 2618, w: 1133, h: 1128}, {x: 1835, y: 2623, w: 1135, h: 1128}];
+                
+                const boxes = opt === 'op1' ? [
+                    {x: 339, y: 367, w: 1132, h: 1132}, 
+                    {x: 1836, y: 369, w: 1127, h: 1126}, 
+                    {x: 266, y: 2532, w: 761, h: 709}
+                ] : [
+                    {x: 339, y: 367, w: 1132, h: 1132}, 
+                    {x: 1836, y: 369, w: 1127, h: 1126}, 
+                    {x: 339, y: 2618, w: 1133, h: 1128}, 
+                    {x: 1835, y: 2623, w: 1135, h: 1128}
+                ];
+                
                 const croppedQR = cropPureQR(rawQrImg);
                 boxes.forEach(box => ctx.drawImage(croppedQR, box.x, box.y, box.w, box.h));
+                
                 canvas.classList.remove('hidden');
                 document.getElementById('downloadBtn').href = canvas.toDataURL("image/jpeg", 0.95);
                 document.getElementById('downloadBtn').classList.remove('hidden');
                 document.getElementById('pdfBtn').classList.remove('hidden');
-            } catch (e) { alert("Lỗi ảnh!"); } finally { btn.disabled = false; btn.innerText = "Tạo Mã QR"; }
+            } catch (e) { alert("Lỗi tải template hoặc ảnh QR! Kiểm tra lại file template_op1.jpg/template_op2.jpg."); } 
+            finally { btn.disabled = false; btn.innerText = "Tạo Mã QR"; }
         }
 
         function handleGenerate() {
@@ -347,7 +363,7 @@
             pdf.save('bang-mica.pdf');
         }
 
-        // File Excel mẫu chuẩn 4 cột (Đã bỏ cột Mã Tài Khoản)
+        // File Excel mẫu chuẩn 4 cột (Đã xóa cột Mã Tài Khoản)
         function downloadSampleExcel() {
             const ws = XLSX.utils.json_to_sheet([{ 
                 "Ngân Hàng": "970428", 
