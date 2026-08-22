@@ -112,9 +112,6 @@
     </div>
 
     <script>
-        const FONT_SIZE = 65;
-        const LINE_SPACING = 75;
-
         function toggleMode() {
             const opt = document.querySelector('input[name="optionType"]:checked').value;
             document.getElementById('manualInputGroup').classList.toggle('hidden', opt !== 'op1' && opt !== 'op2');
@@ -151,33 +148,52 @@
 
         async function loadNetworkImage(url) { return new Promise((res, rej) => { const i = new Image(); i.crossOrigin = "Anonymous"; i.onload = () => res(i); i.onerror = rej; i.src = url; }); }
         
-        function drawFitText(ctx, text, x, y, maxWidth) {
-            let size = 65;
-            ctx.textAlign = "center"; ctx.textBaseline = "middle";
-            do { ctx.font = `bold ${size}px Arial`; size -= 2; } while (ctx.measureText(text).width > maxWidth && size > 20);
-            ctx.fillStyle = "#FF0000"; ctx.fillText(text, x, y);
-        }
-
-        function drawWrappedText(ctx, label, text, startX, startY, maxWidth) {
-            ctx.font = `bold ${FONT_SIZE}px Arial`; ctx.fillStyle = "#FF0000";
-            ctx.textAlign = "left"; ctx.textBaseline = "top";
-            let fullText = label + " " + text;
-            let words = fullText.split(' ');
-            let lines = [];
-            for (let i = 0; i < words.length; i += 6) lines.push(words.slice(i, i + 6).join(' '));
-            lines.forEach((line, index) => { ctx.fillText(line, startX, startY + (index * LINE_SPACING)); });
-            return lines.length * LINE_SPACING;
-        }
-
         function cropPureQR(img) {
-            const size = Math.min(img.width, img.height) * 0.72;
+            const size = Math.min(img.width, img.height);
             const c = document.createElement('canvas'); const ctx = c.getContext('2d');
             c.width = c.height = size;
-            ctx.drawImage(img, (img.width-size)/2, img.height*0.14, size, size, 0, 0, size, size);
+            ctx.drawImage(img, 0, 0, size, size);
             return c;
         }
 
-        // Logic OP3 đầy đủ giữ nguyên
+        // Hàm vẽ chuẩn ảnh định mức kèm thông tin bên dưới giống hệt ảnh mẫu bạn cung cấp
+        function drawStandardAmountQR(ctx, qrImg, name, stk, amount) {
+            ctx.fillStyle = "#FFFFFF";
+            ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+            // Vẽ ảnh QR gốc ở phía trên
+            let qrSize = ctx.canvas.width * 0.78;
+            let qrX = (ctx.canvas.width - qrSize) / 2;
+            let qrY = ctx.canvas.height * 0.04;
+            ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
+
+            // Vẽ phần chữ thông tin ở phía dưới QR
+            let textStartY = qrY + qrSize + 40;
+            
+            // 1. Tên chủ tài khoản (Màu đậm, in hoa)
+            ctx.font = "bold 38px Arial";
+            ctx.fillStyle = "#2D3748";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "top";
+            ctx.fillText(name, ctx.canvas.width / 2, textStartY);
+
+            // 2. Số tài khoản
+            textStartY += 55;
+            ctx.font = "bold 30px Arial";
+            ctx.fillStyle = "#4A5568";
+            ctx.fillText(`STK: ${stk}`, ctx.canvas.width / 2, textStartY);
+
+            // 3. Số tiền (Nếu có)
+            if (amount) {
+                textStartY += 55;
+                ctx.font = "bold 36px Arial";
+                ctx.fillStyle = "#E53E3E"; // Màu đỏ nổi bật cho số tiền
+                let formattedMoney = Number(amount).toLocaleString('vi-VN') + " VNĐ";
+                ctx.fillText(`Số tiền: ${formattedMoney}`, ctx.canvas.width / 2, textStartY);
+            }
+        }
+
+        // Xử lý OP3 (Hàng loạt qua Excel - xuất ảnh chuẩn định mức có tên, stk, số tiền)
         async function processExcelBatch() {
             const fileInput = document.getElementById('excelFile');
             const logDiv = document.getElementById('excelLog');
@@ -212,22 +228,24 @@
                         let ctk = String(r[1] || '').trim().toUpperCase();
                         let stk = String(r[2] || '').trim();
                         let mtk = String(r[3] || '0').trim();
+                        let amount = r[4] ? String(r[4]).replace(/\D/g, '') : ''; // Cột 5 nếu có số tiền
 
                         if(!ctk || !stk) continue;
 
                         let queryBin = (mtk !== "0" && mtk !== "") ? mtk : stk;
-                        let vietqrUrl = `https://img.vietqr.io/image/${bankBin}-${queryBin}-compact.png?accountName=${encodeURIComponent(ctk)}`;
+                        let vietqrUrl = `https://img.vietqr.io/image/${bankBin}-${queryBin}-compact.png?accountName=${encodeURIComponent(ctk)}${amount ? '&amount='+amount : ''}`;
                         
                         try {
                             let rawQrImg = await loadNetworkImage(vietqrUrl);
                             let canvas = document.createElement('canvas');
-                            canvas.width = rawQrImg.width;
-                            canvas.height = rawQrImg.height;
+                            canvas.width = 1000;
+                            canvas.height = 1300; // Khung canvas dọc đủ chứa QR và thông tin bên dưới
                             let ctx = canvas.getContext('2d');
-                            ctx.drawImage(rawQrImg, 0, 0);
 
-                            let dataUrl = canvas.toDataURL("image/png");
-                            zip.file(`QR_${stk}_${ctk}.png`, dataUrl.replace(/^data:image\/png;base64,/, ""), {base64: true});
+                            drawStandardAmountQR(ctx, rawQrImg, ctk, stk, amount);
+
+                            let dataUrl = canvas.toDataURL("image/jpeg", 0.95);
+                            zip.file(`QR_${stk}_${ctk}.jpg`, dataUrl.replace(/^data:image\/jpeg;base64,/, ""), {base64: true});
                             successCount++;
                             logDiv.innerText = `Đang xử lý dòng ${i}/${rows.length - 1} (${stk} - ${ctk})...`;
                         } catch(err) {
@@ -240,7 +258,7 @@
                         const content = await zip.generateAsync({type: "blob"});
                         const link = document.createElement('a');
                         link.href = URL.createObjectURL(content);
-                        link.download = "QR_HangLoat.zip";
+                        link.download = "QR_HangLoat_DinhMuc.zip";
                         link.click();
                         logDiv.innerText = `Đã xuất thành công ${successCount} mã QR vào file ZIP!`;
                     } else {
@@ -253,7 +271,7 @@
             reader.readAsArrayBuffer(fileInput.files[0]);
         }
 
-        // Logic OP4 được cập nhật đúng chuẩn có đầy đủ Tên, STK, Số tiền (áp dụng mẫu khung/vẽ text giống OP3)
+        // Xử lý OP4 (QR Định Mức nhập trực tiếp - xuất ảnh chuẩn có tên, stk, số tiền)
         async function processOp4() {
             const rows = document.querySelectorAll('.op4-row');
             let dataList = [];
@@ -268,7 +286,6 @@
             const btn = document.getElementById('actionBtn');
             btn.disabled = true; btn.innerText = "Đang tạo ZIP...";
             try {
-                const templateImg = await loadNetworkImage('template_op1.jpg');
                 const zip = new JSZip();
                 for (let i = 0; i < dataList.length; i++) {
                     const item = dataList[i];
@@ -276,38 +293,17 @@
                     const rawQrImg = await loadNetworkImage(vietqrUrl);
                     
                     const canvas = document.createElement('canvas');
-                    canvas.width = templateImg.width; 
-                    canvas.height = templateImg.height;
+                    canvas.width = 1000;
+                    canvas.height = 1300;
                     const ctx = canvas.getContext('2d');
-                    ctx.drawImage(templateImg, 0, 0);
                     
-                    const boxes = [ {x: 339, y: 367, w: 1132, h: 1132}, {x: 1836, y: 369, w: 1127, h: 1126}, {x: 266, y: 2532, w: 761, h: 709} ];
-                    const textBoxes = [ {x: 287, y: 1674, w: 1243, h: 348}, {x: 1765, y: 1653, w: 1286, h: 380}, {x: 214, y: 3263, w: 870, h: 174} ];
-
-                    const croppedQR = cropPureQR(rawQrImg);
-                    boxes.forEach(box => ctx.drawImage(croppedQR, box.x, box.y, box.w, box.h));
+                    drawStandardAmountQR(ctx, rawQrImg, item.name, item.stk, item.amount);
                     
-                    textBoxes.forEach((box, index) => {
-                        if (index === 2) {
-                            drawFitText(ctx, "STK: " + item.stk, box.x + box.w/2, box.y + box.h/2, box.w - 20);
-                            return;
-                        }
-                        let curY = box.y + 20;
-                        curY += drawWrappedText(ctx, "CTK:", item.name, box.x + 30, curY, box.w);
-                        curY += 20;
-                        curY += drawWrappedText(ctx, "STK:", item.stk, box.x + 30, curY, box.w);
-                        if (item.amount) {
-                            curY += 20;
-                            let formattedMoney = Number(item.amount).toLocaleString('vi-VN') + " VND";
-                            drawWrappedText(ctx, "TIEN:", formattedMoney, box.x + 30, curY, box.w);
-                        }
-                    });
-
                     let dataUrl = canvas.toDataURL("image/jpeg", 0.95);
                     zip.file(`QR_${item.stk}_${item.amount || '0'}.jpg`, dataUrl.replace(/^data:image\/jpeg;base64,/, ""), {base64: true});
                 }
                 const content = await zip.generateAsync({type: "blob"});
-                const link = document.createElement('a'); link.href = URL.createObjectURL(content); link.download = "QR_DinhMuc_NamABank.zip"; link.click();
+                const link = document.createElement('a'); link.href = URL.createObjectURL(content); link.download = "QR_DinhMuc.zip"; link.click();
             } catch (e) { alert("Lỗi khi tạo file!"); } finally { btn.disabled = false; btn.innerText = "Tạo Mã QR"; }
         }
 
@@ -354,7 +350,7 @@
         }
 
         function downloadSampleExcel() {
-            const ws = XLSX.utils.json_to_sheet([{ "Ngân Hàng": "970428", "Tên Chủ Tài Khoản": "NGUYEN VAN A", "Số Tài Khoản": "123456789", "Mã Tài Khoản": "0" }]);
+            const ws = XLSX.utils.json_to_sheet([{ "Ngân Hàng": "970428", "Tên Chủ Tài Khoản": "NGUYEN VAN A", "Số Tài Khoản": "123456789", "Mã Tài Khoản": "0", "Số Tiền": "2000000" }]);
             const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "DanhSach"); XLSX.writeFile(wb, "mau_qr_hang_loat.xlsx");
         }
     </script>
