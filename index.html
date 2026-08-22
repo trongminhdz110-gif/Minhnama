@@ -13,7 +13,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
 <body class="bg-gray-100 min-h-screen p-6">
-    <div class="max-w-xl mx-auto bg-white p-6 rounded-2xl shadow-lg border border-gray-100">
+    <div class="max-w-2xl mx-auto bg-white p-6 rounded-2xl shadow-lg border border-gray-100">
         <h1 class="text-2xl font-extrabold text-gray-800 mb-6 text-center">Tạo Mã QR Thanh Toán</h1>
         
         <div class="mb-4 p-4 bg-blue-50/60 rounded-xl border border-blue-100">
@@ -36,7 +36,7 @@
                     </label>
                     <label class="flex items-center cursor-pointer">
                         <input type="radio" name="optionType" value="op4" onchange="toggleMode()" class="mr-2 w-4 h-4 text-purple-600">
-                        <span class="font-bold text-purple-700">OP4: QR Định Mức (STK & Số Tiền)</span>
+                        <span class="font-bold text-purple-700">OP4: QR Định Mức (Tên, STK, Số Tiền)</span>
                     </label>
                 </div>
             </div>
@@ -81,20 +81,30 @@
             </div>
         </div>
 
-        <!-- NHÓM OP4: NHẬP STK & SỐ TIỀN -->
+        <!-- NHÓM OP4: NHẬP TÊN, STK & SỐ TIỀN (NAM A BANK MẶC ĐỊNH) -->
         <div id="op4InputGroup" class="space-y-4 hidden">
             <div class="p-4 bg-purple-50 rounded-xl border border-purple-200 space-y-3">
-                <label class="block text-purple-900 font-bold">Danh sách STK và Số Tiền (Định dạng: STK, Số Tiền):</label>
+                <div class="flex justify-between items-center">
+                    <label class="block text-purple-900 font-bold">Danh sách (Ngân hàng: Nam A Bank):</label>
+                </div>
+                <!-- Tiêu đề cột -->
+                <div class="grid grid-cols-12 gap-2 text-xs font-bold text-purple-800 px-1">
+                    <div class="col-span-5">TÊN CHỦ TÀI KHOẢN</div>
+                    <div class="col-span-4">SỐ TÀI KHOẢN</div>
+                    <div class="col-span-2">SỐ TIỀN</div>
+                    <div class="col-span-1"></div>
+                </div>
                 <div id="op4RowsContainer" class="space-y-2 max-h-60 overflow-y-auto pr-1">
                     <!-- Dòng nhập mẫu đầu tiên -->
-                    <div class="flex gap-2 items-center op4-row">
-                        <input type="text" placeholder="Số tài khoản" class="op4-stk w-1/2 border border-purple-300 p-2 rounded-lg uppercase bg-white">
-                        <input type="text" placeholder="Số tiền (VNĐ)" class="op4-amount w-1/2 border border-purple-300 p-2 rounded-lg bg-white" oninput="formatCurrencyInput(this)">
-                        <button type="button" onclick="removeOp4Row(this)" class="text-red-500 font-bold px-2 py-1 hover:bg-red-100 rounded">✕</button>
+                    <div class="grid grid-cols-12 gap-2 items-center op4-row">
+                        <input type="text" placeholder="Tên chủ tài khoản" class="op4-name col-span-5 border border-purple-300 p-2 rounded-lg uppercase bg-white text-sm" oninput="this.value = this.value.toUpperCase()">
+                        <input type="text" placeholder="Số tài khoản" class="op4-stk col-span-4 border border-purple-300 p-2 rounded-lg uppercase bg-white text-sm">
+                        <input type="text" placeholder="Số tiền" class="op4-amount col-span-2 border border-purple-300 p-2 rounded-lg bg-white text-sm" oninput="formatCurrencyInput(this)">
+                        <button type="button" onclick="removeOp4Row(this)" class="col-span-1 text-red-500 font-bold p-2 hover:bg-red-100 rounded text-center">✕</button>
                     </div>
                 </div>
                 <button type="button" onclick="addOp4Row()" class="w-full bg-white text-purple-700 border border-purple-300 font-semibold py-2 px-4 rounded-xl hover:bg-purple-100 transition shadow-sm text-sm">
-                    ➕ Thêm dòng STK
+                    ➕ Thêm dòng mới
                 </button>
             </div>
         </div>
@@ -138,14 +148,15 @@
             }
         }
 
-        function addOp4Row(stkVal = '', amountVal = '') {
+        function addOp4Row(nameVal = '', stkVal = '', amountVal = '') {
             const container = document.getElementById('op4RowsContainer');
             const div = document.createElement('div');
-            div.className = "flex gap-2 items-center op4-row";
+            div.className = "grid grid-cols-12 gap-2 items-center op4-row";
             div.innerHTML = `
-                <input type="text" placeholder="Số tài khoản" value="${stkVal}" class="op4-stk w-1/2 border border-purple-300 p-2 rounded-lg uppercase bg-white">
-                <input type="text" placeholder="Số tiền (VNĐ)" value="${amountVal}" class="op4-amount w-1/2 border border-purple-300 p-2 rounded-lg bg-white" oninput="formatCurrencyInput(this)">
-                <button type="button" onclick="removeOp4Row(this)" class="text-red-500 font-bold px-2 py-1 hover:bg-red-100 rounded">✕</button>
+                <input type="text" placeholder="Tên chủ tài khoản" value="${nameVal}" class="op4-name col-span-5 border border-purple-300 p-2 rounded-lg uppercase bg-white text-sm" oninput="this.value = this.value.toUpperCase()">
+                <input type="text" placeholder="Số tài khoản" value="${stkVal}" class="op4-stk col-span-4 border border-purple-300 p-2 rounded-lg uppercase bg-white text-sm">
+                <input type="text" placeholder="Số tiền" value="${amountVal}" class="op4-amount col-span-2 border border-purple-300 p-2 rounded-lg bg-white text-sm" oninput="formatCurrencyInput(this)">
+                <button type="button" onclick="removeOp4Row(this)" class="col-span-1 text-red-500 font-bold p-2 hover:bg-red-100 rounded text-center">✕</button>
             `;
             container.appendChild(div);
         }
@@ -247,21 +258,16 @@
             const rows = document.querySelectorAll('.op4-row');
             let dataList = [];
             rows.forEach(row => {
+                const name = row.querySelector('.op4-name').value.trim();
                 const stk = row.querySelector('.op4-stk').value.trim();
                 const amountClean = row.querySelector('.op4-amount').value.replace(/\D/g, '');
-                if (stk) {
-                    dataList.push({ stk: stk, amount: amountClean });
+                if (name && stk) {
+                    dataList.push({ name: name, stk: stk, amount: amountClean });
                 }
             });
 
             if (dataList.length === 0) {
-                alert("Vui lòng nhập ít nhất một số tài khoản ở OP4!");
-                return;
-            }
-
-            const ctk = document.getElementById('ctk').value.trim();
-            if (!ctk) {
-                alert("Vui lòng nhập Tên chủ tài khoản ở phần thông tin bên trên!");
+                alert("Vui lòng nhập đầy đủ Tên và STK cho ít nhất một dòng ở OP4!");
                 return;
             }
 
@@ -275,7 +281,7 @@
 
                 for (let i = 0; i < dataList.length; i++) {
                     const item = dataList[i];
-                    let vietqrUrl = `https://img.vietqr.io/image/${document.getElementById('bankBin').value}-${item.stk}-compact.png?accountName=${encodeURIComponent(ctk)}`;
+                    let vietqrUrl = `https://img.vietqr.io/image/970428-${item.stk}-compact.png?accountName=${encodeURIComponent(item.name)}`;
                     if (item.amount) {
                         vietqrUrl += `&amount=${item.amount}`;
                     }
@@ -299,7 +305,7 @@
                             return;
                         }
                         let curY = box.y + 20;
-                        curY += drawWrappedText(ctx, "CTK:", ctk, box.x + 30, curY, box.w);
+                        curY += drawWrappedText(ctx, "CTK:", item.name, box.x + 30, curY, box.w);
                         curY += 20;
                         curY += drawWrappedText(ctx, "STK:", item.stk, box.x + 30, curY, box.w);
                         if (item.amount) {
@@ -317,7 +323,7 @@
                 const content = await zip.generateAsync({type: "blob"});
                 const link = document.createElement('a');
                 link.href = URL.createObjectURL(content);
-                link.download = "QR_DinhMuc_HangLoat.zip";
+                link.download = "QR_DinhMuc_NamABank.zip";
                 link.click();
                 alert("Đã tạo và tải xuống file ZIP thành công!");
             } catch (e) {
