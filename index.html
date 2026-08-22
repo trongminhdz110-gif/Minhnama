@@ -72,7 +72,7 @@
         <div id="excelInputGroup" class="space-y-4 hidden">
             <div class="p-4 bg-emerald-50 rounded-xl border border-emerald-200">
                 <button onclick="downloadSampleExcel()" class="w-full mb-3 bg-white text-emerald-700 border border-emerald-300 font-semibold py-2.5 px-4 rounded-xl hover:bg-emerald-100 transition shadow-sm text-sm">
-                    📥 Tải File Excel Mẫu
+                    📥 Tải File Excel Mẫu (4 Cột)
                 </button>
                 <input type="file" id="excelFile" accept=".xlsx, .xls, .csv" class="w-full text-sm text-gray-700 bg-white p-2 border border-emerald-300 rounded-lg">
                 <div id="excelLog" class="mt-3 p-3 bg-white border border-emerald-200 rounded-lg text-xs font-mono text-gray-700 max-h-40 overflow-y-auto hidden"></div>
@@ -156,44 +156,39 @@
             return c;
         }
 
-        // Hàm vẽ chuẩn ảnh định mức kèm thông tin bên dưới giống hệt ảnh mẫu bạn cung cấp
+        // Vẽ mẫu QR định mức kèm thông tin bên dưới
         function drawStandardAmountQR(ctx, qrImg, name, stk, amount) {
             ctx.fillStyle = "#FFFFFF";
             ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
-            // Vẽ ảnh QR gốc ở phía trên
             let qrSize = ctx.canvas.width * 0.78;
             let qrX = (ctx.canvas.width - qrSize) / 2;
             let qrY = ctx.canvas.height * 0.04;
             ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
 
-            // Vẽ phần chữ thông tin ở phía dưới QR
             let textStartY = qrY + qrSize + 40;
             
-            // 1. Tên chủ tài khoản (Màu đậm, in hoa)
             ctx.font = "bold 38px Arial";
             ctx.fillStyle = "#2D3748";
             ctx.textAlign = "center";
             ctx.textBaseline = "top";
             ctx.fillText(name, ctx.canvas.width / 2, textStartY);
 
-            // 2. Số tài khoản
             textStartY += 55;
             ctx.font = "bold 30px Arial";
             ctx.fillStyle = "#4A5568";
             ctx.fillText(`STK: ${stk}`, ctx.canvas.width / 2, textStartY);
 
-            // 3. Số tiền (Nếu có)
             if (amount) {
                 textStartY += 55;
                 ctx.font = "bold 36px Arial";
-                ctx.fillStyle = "#E53E3E"; // Màu đỏ nổi bật cho số tiền
+                ctx.fillStyle = "#E53E3E";
                 let formattedMoney = Number(amount).toLocaleString('vi-VN') + " VNĐ";
                 ctx.fillText(`Số tiền: ${formattedMoney}`, ctx.canvas.width / 2, textStartY);
             }
         }
 
-        // Xử lý OP3 (Hàng loạt qua Excel - xuất ảnh chuẩn định mức có tên, stk, số tiền)
+        // Xử lý OP3 (Hàng loạt qua Excel - Đã bỏ cột MTK, cập nhật hiển thị tiến trình chi tiết vào log)
         async function processExcelBatch() {
             const fileInput = document.getElementById('excelFile');
             const logDiv = document.getElementById('excelLog');
@@ -220,26 +215,30 @@
 
                     const zip = new JSZip();
                     let successCount = 0;
+                    let totalRows = rows.length - 1;
 
                     for(let i = 1; i < rows.length; i++) {
                         let r = rows[i];
                         if(!r || r.length === 0) continue;
+                        
+                        // Cấu trúc mới 4 cột: [0]: Ngân hàng, [1]: Tên, [2]: STK, [3]: Số tiền
                         let bankBin = String(r[0] || '970428').trim();
                         let ctk = String(r[1] || '').trim().toUpperCase();
                         let stk = String(r[2] || '').trim();
-                        let mtk = String(r[3] || '0').trim();
-                        let amount = r[4] ? String(r[4]).replace(/\D/g, '') : ''; // Cột 5 nếu có số tiền
+                        let amount = r[3] ? String(r[3]).replace(/\D/g, '') : '';
 
                         if(!ctk || !stk) continue;
 
-                        let queryBin = (mtk !== "0" && mtk !== "") ? mtk : stk;
-                        let vietqrUrl = `https://img.vietqr.io/image/${bankBin}-${queryBin}-compact.png?accountName=${encodeURIComponent(ctk)}${amount ? '&amount='+amount : ''}`;
+                        // Hiển thị chi tiết tiến trình quét từng dòng vào khung log
+                        logDiv.innerText = `Đang xử lý dòng ${i}/${totalRows}\nSTK: ${stk}\nTên: ${ctk}`;
+
+                        let vietqrUrl = `https://img.vietqr.io/image/${bankBin}-${stk}-compact.png?accountName=${encodeURIComponent(ctk)}${amount ? '&amount='+amount : ''}`;
                         
                         try {
                             let rawQrImg = await loadNetworkImage(vietqrUrl);
                             let canvas = document.createElement('canvas');
                             canvas.width = 1000;
-                            canvas.height = 1300; // Khung canvas dọc đủ chứa QR và thông tin bên dưới
+                            canvas.height = 1300;
                             let ctx = canvas.getContext('2d');
 
                             drawStandardAmountQR(ctx, rawQrImg, ctk, stk, amount);
@@ -247,22 +246,21 @@
                             let dataUrl = canvas.toDataURL("image/jpeg", 0.95);
                             zip.file(`QR_${stk}_${ctk}.jpg`, dataUrl.replace(/^data:image\/jpeg;base64,/, ""), {base64: true});
                             successCount++;
-                            logDiv.innerText = `Đang xử lý dòng ${i}/${rows.length - 1} (${stk} - ${ctk})...`;
                         } catch(err) {
                             console.error(`Lỗi tạo QR cho dòng ${i}:`, err);
                         }
                     }
 
                     if(successCount > 0) {
-                        logDiv.innerText = `Hoàn thành! Đang nén file ZIP...`;
+                        logDiv.innerText = `Hoàn thành! Đã tạo xong ${successCount}/${totalRows} mã QR. Đang nén file ZIP...`;
                         const content = await zip.generateAsync({type: "blob"});
                         const link = document.createElement('a');
                         link.href = URL.createObjectURL(content);
                         link.download = "QR_HangLoat_DinhMuc.zip";
                         link.click();
-                        logDiv.innerText = `Đã xuất thành công ${successCount} mã QR vào file ZIP!`;
+                        logDiv.innerText = `✅ Đã xuất thành công ${successCount} mã QR vào file ZIP!`;
                     } else {
-                        logDiv.innerText = "Không tìm thấy dữ liệu hợp lệ để tạo QR trong file!";
+                        logDiv.innerText = "❌ Không tìm thấy dữ liệu hợp lệ để tạo QR trong file!";
                     }
                 } catch(err) {
                     logDiv.innerText = "Lỗi đọc file Excel: " + err.message;
@@ -271,7 +269,7 @@
             reader.readAsArrayBuffer(fileInput.files[0]);
         }
 
-        // Xử lý OP4 (QR Định Mức nhập trực tiếp - xuất ảnh chuẩn có tên, stk, số tiền)
+        // Xử lý OP4
         async function processOp4() {
             const rows = document.querySelectorAll('.op4-row');
             let dataList = [];
@@ -349,9 +347,17 @@
             pdf.save('bang-mica.pdf');
         }
 
+        // File Excel mẫu chuẩn 4 cột (Đã bỏ cột Mã Tài Khoản)
         function downloadSampleExcel() {
-            const ws = XLSX.utils.json_to_sheet([{ "Ngân Hàng": "970428", "Tên Chủ Tài Khoản": "NGUYEN VAN A", "Số Tài Khoản": "123456789", "Mã Tài Khoản": "0", "Số Tiền": "2000000" }]);
-            const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "DanhSach"); XLSX.writeFile(wb, "mau_qr_hang_loat.xlsx");
+            const ws = XLSX.utils.json_to_sheet([{ 
+                "Ngân Hàng": "970428", 
+                "Tên Chủ Tài Khoản": "NGUYEN VAN A", 
+                "Số Tài Khoản": "123456789", 
+                "Số Tiền": "2000000" 
+            }]);
+            const wb = XLSX.utils.book_new(); 
+            XLSX.utils.book_append_sheet(wb, ws, "DanhSach"); 
+            XLSX.writeFile(wb, "mau_qr_hang_loat.xlsx");
         }
     </script>
 </body>
