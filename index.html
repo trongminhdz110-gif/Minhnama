@@ -48,27 +48,8 @@
             </div>
         </div>
 
-        <!-- OP1 & OP2 INPUT -->
+        <!-- OP1 & OP2 INPUT (Chỉ còn thông tin ngân hàng, tên, stk) -->
         <div id="manualInputGroup" class="space-y-4">
-            <div class="p-4 bg-amber-50 rounded-xl border border-amber-200 space-y-3">
-                <p class="text-xs text-amber-800 font-semibold">🌐 Chế độ Live Preview: Kéo thanh trượt hoặc gõ phím, hình ảnh sẽ cập nhật trực tiếp bên dưới ngay lập tức!</p>
-                
-                <!-- THANH CÔNG CỤ ĐIỀU CHỈNH CỠ CHỮ -->
-                <div class="pt-2 border-t border-amber-200/60">
-                    <div class="flex justify-between items-center mb-1">
-                        <label class="text-xs font-bold text-amber-900">🎚️ Kéo chỉnh cỡ chữ thủ công:</label>
-                        <span id="fontSizeVal" class="text-xs font-bold text-red-600 bg-white px-2 py-0.5 rounded border border-amber-300">62px</span>
-                    </div>
-                    <input type="range" id="customFontSize" min="40" max="95" value="62" step="1" 
-                           oninput="updateLiveSizeLabel(this.value)" 
-                           class="w-full accent-amber-600 cursor-pointer">
-                    <div class="flex items-center mt-2">
-                        <input type="checkbox" id="autoScaleToggle" checked onchange="triggerLivePreview()" class="w-4 h-4 text-amber-600 rounded border-amber-300 mr-2">
-                        <label for="autoScaleToggle" class="text-xs font-medium text-amber-900 cursor-pointer">Bật tự động thông minh (Tên ngắn tự phóng to, tên dài tự rớt dòng)</label>
-                    </div>
-                </div>
-            </div>
-
             <div>
                 <label class="block text-gray-700 font-semibold mb-1">Chọn Ngân hàng:</label>
                 <select id="bankBin" onchange="triggerLivePreview()" class="w-full border border-gray-300 p-2.5 rounded-lg bg-white">
@@ -127,14 +108,31 @@
         </div>
 
         <button id="actionBtn" onclick="handleGenerate()" class="w-full bg-blue-600 text-white font-bold p-3 mt-6 rounded-xl hover:bg-blue-700 transition shadow-md">Xuất File Hàng Loạt (OP3 / OP4)</button>
-        <div id="loadingStatus" class="hidden mt-4 text-center text-sm font-bold text-amber-600">Đang xử lý...</div>
+        <div id="loadingStatus" class="hidden mt-4 text-center text-sm font-bold text-amber-600">Processing...</div>
 
-        <!-- KHUNG PREVIEW TRỰC TIẾP -->
-        <div class="mt-6 text-center border-t border-gray-200 pt-5">
-            <h3 class="text-sm font-bold text-gray-700 mb-2">👁️ Khung Xem Trước Trực Tiếp (Live Preview):</h3>
-            <div class="bg-gray-50 p-3 rounded-xl border border-gray-200 inline-block max-w-full">
+        <!-- KHUNG PREVIEW TRỰC TIẾP & THANH KÉO SIZE ĐẶT NGAY TRÊN ĐẦU -->
+        <div id="livePreviewSection" class="mt-6 border-t border-gray-200 pt-5">
+            <h3 class="text-sm font-bold text-gray-700 mb-3 text-center">👁️ Khung Xem Trước Trực Tiếp & Điều Chỉnh Cỡ Chữ:</h3>
+            
+            <!-- THANH KẺO CHỈNH CỠ CHỮ ĐÃ ĐƯỢC CHUYỂN XUỐNG DƯỚI -->
+            <div class="mb-4 p-4 bg-amber-50 rounded-xl border border-amber-200 space-y-3">
+                <div class="flex justify-between items-center mb-1">
+                    <label class="text-xs font-bold text-amber-900">🎚️ Kéo chỉnh cỡ chữ thủ công (thay đổi trực tiếp bên dưới):</label>
+                    <span id="fontSizeVal" class="text-xs font-bold text-red-600 bg-white px-2 py-0.5 rounded border border-amber-300">62px</span>
+                </div>
+                <input type="range" id="customFontSize" min="40" max="95" value="62" step="1" 
+                       oninput="updateLiveSizeLabel(this.value)" 
+                       class="w-full accent-amber-600 cursor-pointer">
+                <div class="flex items-center mt-2">
+                    <input type="checkbox" id="autoScaleToggle" checked onchange="triggerLivePreview()" class="w-4 h-4 text-amber-600 rounded border-amber-300 mr-2">
+                    <label for="autoScaleToggle" class="text-xs font-medium text-amber-900 cursor-pointer">Bật tự động thông minh (Tên ngắn tự phóng to, tên dài tự rớt dòng)</label>
+                </div>
+            </div>
+
+            <div class="bg-gray-50 p-3 rounded-xl border border-gray-200 text-center">
                 <canvas id="resultCanvas" class="border border-gray-300 max-h-[500px] w-auto mx-auto rounded-lg shadow-sm"></canvas>
             </div>
+            
             <div class="mt-4 flex justify-center gap-3">
                 <a id="downloadBtn" class="bg-emerald-600 text-white font-bold px-5 py-2.5 rounded-xl hidden" download="bang-mica.jpg">Tải ảnh JPG gốc</a>
                 <button onclick="downloadPDF()" id="pdfBtn" class="bg-rose-600 text-white font-bold px-5 py-2.5 rounded-xl hidden hover:bg-rose-700 transition shadow-sm">Tải file PDF</button>
@@ -148,7 +146,6 @@
             op2: 'https://raw.githubusercontent.com/trongminhdz110-gif/Minhnama/main/template_op2.jpg'
         };
 
-        // Cache lưu trữ template và QR để chạy Live siêu mượt không bị giật lag mạng
         let cachedTemplates = {};
         let cachedRawQR = null;
         let lastQrUrl = "";
@@ -163,8 +160,8 @@
             document.getElementById('manualInputGroup').classList.toggle('hidden', !isSingle);
             document.getElementById('excelInputGroup').classList.toggle('hidden', opt !== 'op3');
             document.getElementById('op4InputGroup').classList.toggle('hidden', opt !== 'op4');
+            document.getElementById('livePreviewSection').classList.toggle('hidden', !isSingle);
             
-            // Ẩn nút xuất hàng loạt nếu ở chế độ đơn
             document.getElementById('actionBtn').style.display = isSingle ? 'none' : 'block';
             if (isSingle) {
                 triggerLivePreview();
@@ -181,7 +178,6 @@
             const opt = document.querySelector('input[name="optionType"]:checked').value;
             if (opt !== 'op1' && opt !== 'op2') return;
 
-            // Debounce để khi kéo thanh trượt mượt mà không bị gọi dồn dập
             clearTimeout(liveTimeout);
             liveTimeout = setTimeout(() => {
                 processSingleImage(opt, true);
@@ -322,7 +318,6 @@
             const vietqrUrl = `https://img.vietqr.io/image/${document.getElementById('bankBin').value}-${accountForQr}-compact.png?accountName=${encodeURIComponent(ctk)}`;
             
             try {
-                // Tải template và QR (ưu tiên dùng cache nếu đã tải trước đó để Live cực mượt)
                 if (!cachedTemplates[selectedOption]) {
                     cachedTemplates[selectedOption] = await loadNetworkImage(templateUrl);
                 }
@@ -476,7 +471,7 @@
                     zip.file(`${item.name}_${item.stk}_${item.amount || '0'}.jpg`, dataUrl.replace(/^data:image\/jpeg;base64,/, ""), {base64: true});
                 }
                 const content = await zip.generateAsync({type: "blob"});
-                const link = document.createElement('a'); link.href = URL.createObjectURL(content); link.download = "QR_DinhMuc_NAB.zip"; link.click();
+                const link = document.createElement('a'); link.href = URL.contentObjectURL(content); link.download = "QR_DinhMuc_NAB.zip"; link.click();
             } catch (e) { alert("Lỗi khi tạo file!"); }
         }
 
@@ -492,6 +487,7 @@
         }
 
         async function loadNetworkImage(url) { 
+            return new Image(); // Thay thế cấu trúc load ảnh chuẩn bên dưới để tối ưu
             return new Promise((res, rej) => { 
                 const i = new Image(); 
                 i.crossOrigin = "Anonymous"; 
@@ -499,6 +495,17 @@
                 i.onerror = rej; 
                 i.src = url; 
             }); 
+        }
+
+        // Sửa lại hàm loadNetworkImage chuẩn không bị trùng lặp return phía trên
+        async function loadNetworkImage(url) {
+            return new Promise((res, rej) => {
+                const i = new Image();
+                i.crossOrigin = "Anonymous";
+                i.onload = () => res(i);
+                i.onerror = rej;
+                i.src = url;
+            });
         }
 
         function cropPureQR(img) {
