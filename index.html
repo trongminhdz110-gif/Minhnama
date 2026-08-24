@@ -12,41 +12,46 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
-<body class="bg-gray-100 min-h-screen p-4 sm:p-6">
-    <div class="max-w-xl mx-auto bg-white p-5 sm:p-6 rounded-2xl shadow-lg border border-gray-100">
-        <h1 class="text-2xl font-extrabold text-gray-800 mb-6 text-center">Tạo Mã QR Thanh Toán</h1>
+<body class="bg-gradient-to-br from-slate-50 to-blue-50 min-h-screen p-4 sm:p-6 font-sans">
+    <div class="max-w-xl mx-auto bg-white p-5 sm:p-8 rounded-3xl shadow-xl border border-blue-100">
         
-        <div class="mb-4 p-4 bg-blue-50/60 rounded-xl border border-blue-100">
-            <label class="block text-gray-700 font-bold mb-2">Chọn loại thiết kế:</label>
-            <div class="flex flex-col gap-3">
-                <div class="flex gap-6">
-                    <label class="flex items-center cursor-pointer">
-                        <input type="radio" name="optionType" value="op1" checked onchange="toggleMode()" class="mr-2 w-4 h-4 text-blue-600">
-                        <span class="font-medium text-blue-900">OP1: MICA & Loa</span>
-                    </label>
-                    <label class="flex items-center cursor-pointer">
-                        <input type="radio" name="optionType" value="op2" onchange="toggleMode()" class="mr-2 w-4 h-4 text-blue-600">
-                        <span class="font-medium text-blue-900">OP2: MICA FULL</span>
-                    </label>
-                </div>
-                <div class="flex flex-col sm:flex-row gap-3 sm:gap-6">
-                    <label class="flex items-center cursor-pointer">
-                        <input type="radio" name="optionType" value="op3" onchange="toggleMode()" class="mr-2 w-4 h-4 text-emerald-600">
-                        <span class="font-bold text-emerald-700">OP3: QR Hàng Loạt (Excel)</span>
-                    </label>
-                    <label class="flex items-center cursor-pointer">
-                        <input type="radio" name="optionType" value="op4" onchange="toggleMode()" class="mr-2 w-4 h-4 text-purple-600">
-                        <span class="font-bold text-purple-700">OP4: QR Định Mức (Nhập tay)</span>
-                    </label>
-                </div>
+        <!-- HEADER WITH ACTUAL IMAGE LOGO -->
+        <div class="flex items-center justify-center gap-4 mb-6 pb-4 border-b border-gray-100">
+            <img src="logo_namabank.png" alt="Nam A Bank" class="h-12 object-contain rounded-xl shadow-xs border border-yellow-200">
+            <div>
+                <h1 class="text-xl font-black text-gray-800 tracking-tight">Tạo Mã QR Thanh Toán</h1>
+                <p class="text-xs font-bold text-blue-600 uppercase tracking-wider">Hệ thống Mica & Hàng Loạt</p>
+            </div>
+        </div>
+        
+        <!-- OPTION SELECTOR -->
+        <div class="mb-6 p-4 bg-blue-50/70 rounded-2xl border border-blue-100">
+            <label class="block text-gray-700 font-bold mb-3 text-sm">Chọn loại thiết kế & chế độ:</label>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <label class="flex items-center p-3 bg-white rounded-xl border border-blue-200 cursor-pointer hover:bg-blue-50 transition shadow-xs">
+                    <input type="radio" name="optionType" value="op1" checked onchange="toggleMode()" class="mr-2 w-4 h-4 text-blue-600">
+                    <span class="font-bold text-blue-900 text-sm">OP1: MICA & Loa</span>
+                </label>
+                <label class="flex items-center p-3 bg-white rounded-xl border border-blue-200 cursor-pointer hover:bg-blue-50 transition shadow-xs">
+                    <input type="radio" name="optionType" value="op2" onchange="toggleMode()" class="mr-2 w-4 h-4 text-blue-600">
+                    <span class="font-bold text-blue-900 text-sm">OP2: MICA FULL</span>
+                </label>
+                <label class="flex items-center p-3 bg-white rounded-xl border border-emerald-200 cursor-pointer hover:bg-emerald-50 transition shadow-xs">
+                    <input type="radio" name="optionType" value="op3" onchange="toggleMode()" class="mr-2 w-4 h-4 text-emerald-600">
+                    <span class="font-bold text-emerald-700 text-sm">OP3: QR Excel</span>
+                </label>
+                <label class="flex items-center p-3 bg-white rounded-xl border border-purple-200 cursor-pointer hover:bg-purple-50 transition shadow-xs">
+                    <input type="radio" name="optionType" value="op4" onchange="toggleMode()" class="mr-2 w-4 h-4 text-purple-600">
+                    <span class="font-bold text-purple-700 text-sm">OP4: QR Nhập Tay</span>
+                </label>
             </div>
         </div>
 
         <!-- OP1 & OP2 INPUT -->
         <div id="manualInputGroup" class="space-y-4">
             <div>
-                <label class="block text-gray-700 font-semibold mb-1">Chọn Ngân hàng:</label>
-                <select id="bankBin" class="w-full border border-gray-300 p-2.5 rounded-lg bg-white">
+                <label class="block text-gray-700 font-semibold mb-1 text-sm">Chọn Ngân hàng:</label>
+                <select id="bankBin" class="w-full border border-gray-300 p-3 rounded-xl bg-white focus:ring-2 focus:ring-blue-500 outline-none transition">
                     <option value="970428" selected>Nam A Bank</option>
                     <option value="970436">Vietcombank</option>
                     <option value="970407">Techcombank</option>
@@ -57,57 +62,57 @@
                 </select>
             </div>
             <div>
-                <label class="block text-gray-700 font-semibold mb-1">Tên chủ tài khoản:</label>
-                <input type="text" id="ctk" class="w-full border border-gray-300 p-2.5 rounded-lg uppercase" oninput="this.value = this.value.toUpperCase()">
+                <label class="block text-gray-700 font-semibold mb-1 text-sm">Tên chủ tài khoản:</label>
+                <input type="text" id="ctk" class="w-full border border-gray-300 p-3 rounded-xl uppercase focus:ring-2 focus:ring-blue-500 outline-none transition" oninput="this.value = this.value.toUpperCase()">
             </div>
             <div>
-                <label class="block text-gray-700 font-semibold mb-1">Số tài khoản:</label>
-                <input type="text" id="stk" class="w-full border border-gray-300 p-2.5 rounded-lg uppercase">
+                <label class="block text-gray-700 font-semibold mb-1 text-sm">Số tài khoản:</label>
+                <input type="text" id="stk" class="w-full border border-gray-300 p-3 rounded-xl uppercase focus:ring-2 focus:ring-blue-500 outline-none transition">
             </div>
             <div>
-                <label class="block text-gray-700 font-semibold mb-1">Mã tài khoản (nhập 0 để ẩn):</label>
-                <input type="text" id="mtk" value="0" class="w-full border border-gray-300 p-2.5 rounded-lg uppercase">
+                <label class="block text-gray-700 font-semibold mb-1 text-sm">Mã tài khoản (nhập 0 để ẩn):</label>
+                <input type="text" id="mtk" value="0" class="w-full border border-gray-300 p-3 rounded-xl uppercase focus:ring-2 focus:ring-blue-500 outline-none transition">
             </div>
         </div>
 
-        <!-- OP3 EXCEL INPUT (Tên, STK, Số tiền - Mặc định NAB) -->
+        <!-- OP3 EXCEL INPUT -->
         <div id="excelInputGroup" class="space-y-4 hidden">
-            <div class="p-4 bg-emerald-50 rounded-xl border border-emerald-200">
-                <button onclick="downloadSampleExcel()" class="w-full mb-3 bg-white text-emerald-700 border border-emerald-300 font-semibold py-2.5 px-4 rounded-xl hover:bg-emerald-100 transition shadow-sm text-sm">
+            <div class="p-4 bg-emerald-50/70 rounded-2xl border border-emerald-200">
+                <button onclick="downloadSampleExcel()" class="w-full mb-3 bg-white text-emerald-700 border border-emerald-300 font-bold py-3 px-4 rounded-xl hover:bg-emerald-100 transition shadow-xs text-sm">
                     📥 Tải File Excel Mẫu (Tên, STK, Số Tiền)
                 </button>
-                <input type="file" id="excelFile" accept=".xlsx, .xls, .csv" class="w-full text-sm text-gray-700 bg-white p-2 border border-emerald-300 rounded-lg">
-                <div id="excelLog" class="mt-3 p-3 bg-white border border-emerald-200 rounded-lg text-xs font-mono text-gray-700 max-h-40 overflow-y-auto hidden"></div>
+                <input type="file" id="excelFile" accept=".xlsx, .xls, .csv" class="w-full text-sm text-gray-700 bg-white p-2.5 border border-emerald-300 rounded-xl">
+                <div id="excelLog" class="mt-3 p-3 bg-white border border-emerald-200 rounded-xl text-xs font-mono text-gray-700 max-h-40 overflow-y-auto hidden shadow-inner"></div>
             </div>
         </div>
 
-        <!-- OP4 MANUAL INPUT (Tên, STK, Số tiền - Mặc định NAB) -->
+        <!-- OP4 MANUAL INPUT -->
         <div id="op4InputGroup" class="space-y-4 hidden">
-            <div class="p-4 bg-purple-50 rounded-xl border border-purple-200 space-y-3">
+            <div class="p-4 bg-purple-50/70 rounded-2xl border border-purple-200 space-y-3">
                 <label class="block text-purple-900 font-bold text-sm">Danh sách (Ngân hàng: Nam A Bank):</label>
                 <div class="overflow-x-auto pb-2">
                     <div id="op4RowsContainer" class="space-y-2.5 min-w-[550px]">
                         <div class="grid grid-cols-[2fr_1.3fr_1.3fr_auto] gap-2 op4-row items-center">
-                            <input type="text" placeholder="Tên chủ tài khoản" class="op4-name border border-purple-300 p-2.5 rounded-lg uppercase text-sm text-gray-700 bg-white" oninput="this.value = this.value.toUpperCase()">
-                            <input type="text" placeholder="Số tài khoản" class="op4-stk border border-purple-300 p-2.5 rounded-lg text-sm text-gray-700 bg-white">
-                            <input type="text" placeholder="Số tiền (VD: 50000)" class="op4-amount border border-purple-300 p-2.5 rounded-lg text-sm text-gray-700 bg-white" oninput="formatCurrencyInput(this)">
+                            <input type="text" placeholder="Tên chủ tài khoản" class="op4-name border border-purple-300 p-2.5 rounded-xl uppercase text-sm text-gray-700 bg-white focus:ring-2 focus:ring-purple-500 outline-none" oninput="this.value = this.value.toUpperCase()">
+                            <input type="text" placeholder="Số tài khoản" class="op4-stk border border-purple-300 p-2.5 rounded-xl text-sm text-gray-700 bg-white focus:ring-2 focus:ring-purple-500 outline-none">
+                            <input type="text" placeholder="Số tiền (VD: 50000)" class="op4-amount border border-purple-300 p-2.5 rounded-xl text-sm text-gray-700 bg-white focus:ring-2 focus:ring-purple-500 outline-none" oninput="formatCurrencyInput(this)">
                             <button type="button" onclick="removeOp4Row(this)" class="w-8 h-9 flex items-center justify-center text-red-400 font-bold hover:text-red-600 text-lg">✕</button>
                         </div>
                     </div>
                 </div>
-                <button type="button" onclick="addOp4Row()" class="w-full bg-white text-purple-700 border border-purple-300 font-semibold py-2.5 px-4 rounded-xl hover:bg-purple-100 transition shadow-sm text-sm">
+                <button type="button" onclick="addOp4Row()" class="w-full bg-white text-purple-700 border border-purple-300 font-bold py-2.5 px-4 rounded-xl hover:bg-purple-100 transition shadow-xs text-sm">
                     ➕ Thêm dòng mới
                 </button>
             </div>
         </div>
 
-        <button id="actionBtn" onclick="handleGenerate()" class="w-full bg-blue-600 text-white font-bold p-3 mt-6 rounded-xl hover:bg-blue-700 transition shadow-md">Tạo Mã QR</button>
+        <button id="actionBtn" onclick="handleGenerate()" class="w-full bg-blue-600 text-white font-bold p-3.5 mt-6 rounded-xl hover:bg-blue-700 transition shadow-lg shadow-blue-200">Tạo Mã QR</button>
         <div id="loadingStatus" class="hidden mt-4 text-center text-sm font-bold text-amber-600">Đang xử lý...</div>
 
         <div class="mt-6 text-center">
-            <canvas id="resultCanvas" class="border border-gray-200 max-w-full mx-auto rounded-lg shadow-sm hidden"></canvas>
+            <canvas id="resultCanvas" class="border border-gray-200 max-w-full mx-auto rounded-xl shadow-md hidden"></canvas>
             <div class="mt-4 flex justify-center gap-3">
-                <a id="downloadBtn" class="bg-emerald-600 text-white font-bold px-5 py-2.5 rounded-xl hidden" download="bang-mica.jpg">Tải ảnh JPG</a>
+                <a id="downloadBtn" class="bg-emerald-600 text-white font-bold px-5 py-2.5 rounded-xl hidden hover:bg-emerald-700 transition shadow-sm">Tải ảnh JPG</a>
                 <button onclick="downloadPDF()" id="pdfBtn" class="bg-rose-600 text-white font-bold px-5 py-2.5 rounded-xl hidden hover:bg-rose-700 transition shadow-sm">Tải file PDF</button>
             </div>
         </div>
@@ -132,9 +137,9 @@
             const div = document.createElement('div');
             div.className = "grid grid-cols-[2fr_1.3fr_1.3fr_auto] gap-2 op4-row items-center";
             div.innerHTML = `
-                <input type="text" placeholder="Tên chủ tài khoản" value="${nameVal}" class="op4-name border border-purple-300 p-2.5 rounded-lg uppercase text-sm text-gray-700 bg-white" oninput="this.value = this.value.toUpperCase()">
-                <input type="text" placeholder="Số tài khoản" value="${stkVal}" class="op4-stk border border-purple-300 p-2.5 rounded-lg text-sm text-gray-700 bg-white">
-                <input type="text" placeholder="Số tiền (VD: 50000)" value="${amountVal}" class="op4-amount border border-purple-300 p-2.5 rounded-lg text-sm text-gray-700 bg-white" oninput="formatCurrencyInput(this)">
+                <input type="text" placeholder="Tên chủ tài khoản" value="${nameVal}" class="op4-name border border-purple-300 p-2.5 rounded-xl uppercase text-sm text-gray-700 bg-white" oninput="this.value = this.value.toUpperCase()">
+                <input type="text" placeholder="Số tài khoản" value="${stkVal}" class="op4-stk border border-purple-300 p-2.5 rounded-xl text-sm text-gray-700 bg-white">
+                <input type="text" placeholder="Số tiền (VD: 50000)" value="${amountVal}" class="op4-amount border border-purple-300 p-2.5 rounded-xl text-sm text-gray-700 bg-white" oninput="formatCurrencyInput(this)">
                 <button type="button" onclick="removeOp4Row(this)" class="w-8 h-9 flex items-center justify-center text-red-400 font-bold hover:text-red-600 text-lg">✕</button>
             `;
             container.appendChild(div);
@@ -149,18 +154,6 @@
         function formatCurrencyInput(input) {
             let val = input.value.replace(/\D/g, '');
             input.value = val ? Number(val).toLocaleString('vi-VN') : '';
-        }
-
-        function drawFitText(ctx, text, x, y, maxWidth) {
-            let size = 65;
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
-            do {
-                ctx.font = `bold ${size}px Arial`;
-                size -= 2;
-            } while (ctx.measureText(text).width > maxWidth && size > 20);
-            ctx.fillStyle = "#FF0000";
-            ctx.fillText(text, x, y);
         }
 
         function drawWrappedText(ctx, label, text, startX, startY, maxWidth, maxWordsPerLine = 6) {
@@ -178,7 +171,18 @@
             return lines.length * LINE_SPACING;
         }
 
-        // Vẽ QR định mức kèm thông tin cho OP3 và OP4
+        function drawFitText(ctx, text, x, y, maxWidth) {
+            let size = 65;
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            do {
+                ctx.font = `bold ${size}px Arial`;
+                size -= 2;
+            } while (ctx.measureText(text).width > maxWidth && size > 20);
+            ctx.fillStyle = "#FF0000";
+            ctx.fillText(text, x, y);
+        }
+
         function drawStandardAmountQR(ctx, qrImg, name, stk, amount) {
             ctx.fillStyle = "#FFFFFF";
             ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
@@ -210,13 +214,13 @@
             }
         }
 
-        // Xử lý OP3: Đọc file Excel (3 cột: Tên, STK, Số tiền - Mặc định NAB)
+        // Xử lý song song bằng Promise.all cho Excel (OP3)
         async function processExcelBatch() {
             const fileInput = document.getElementById('excelFile');
             const logDiv = document.getElementById('excelLog');
             if(fileInput.files.length === 0) { alert("Vui lòng chọn file Excel!"); return; }
             logDiv.classList.remove('hidden');
-            logDiv.innerText = "Đang đọc file Excel...";
+            logDiv.innerText = "Đang đọc file và tạo QR đồng loạt...";
 
             const reader = new FileReader();
             reader.onload = async function(e) {
@@ -228,50 +232,51 @@
 
                     if(rows.length <= 1) { logDiv.innerText = "File Excel không có dữ liệu!"; return; }
 
-                    const zip = new JSZip();
-                    let successCount = 0;
-                    let totalRows = rows.length - 1;
-
+                    let itemsToProcess = [];
                     for(let i = 1; i < rows.length; i++) {
                         let r = rows[i];
                         if(!r || r.length === 0) continue;
-                        
                         let ctk = String(r[0] || '').trim().toUpperCase();
                         let stk = String(r[1] || '').trim();
                         let amount = r[2] ? String(r[2]).replace(/\D/g, '') : '';
+                        if(ctk && stk) itemsToProcess.push({ ctk, stk, amount });
+                    }
 
-                        if(!ctk || !stk) continue;
+                    if(itemsToProcess.length === 0) { logDiv.innerText = "❌ Không tìm thấy dữ liệu hợp lệ!"; return; }
 
-                        logDiv.innerText = `Đang xử lý dòng ${i}/${totalRows}\nSTK: ${stk}\nTên: ${ctk}`;
+                    logDiv.innerText = `Đang tải ${itemsToProcess.length} mã QR song song...`;
 
-                        let vietqrUrl = `https://img.vietqr.io/image/970428-${stk}-compact.png?accountName=${encodeURIComponent(ctk)}${amount ? '&amount='+amount : ''}`;
-                        
+                    const zip = new JSZip();
+                    let successCount = 0;
+
+                    await Promise.all(itemsToProcess.map(async (item) => {
+                        let vietqrUrl = `https://img.vietqr.io/image/970428-${item.stk}-compact.png?accountName=${encodeURIComponent(item.ctk)}${item.amount ? '&amount='+item.amount : ''}`;
                         try {
                             let rawQrImg = await loadNetworkImage(vietqrUrl);
                             let canvas = document.createElement('canvas');
                             canvas.width = 1000; canvas.height = 1300;
                             let ctx = canvas.getContext('2d');
 
-                            drawStandardAmountQR(ctx, rawQrImg, ctk, stk, amount);
+                            drawStandardAmountQR(ctx, rawQrImg, item.ctk, item.stk, item.amount);
 
                             let dataUrl = canvas.toDataURL("image/jpeg", 0.95);
-                            zip.file(`${ctk}_${stk}_${amount}.jpg`, dataUrl.replace(/^data:image\/jpeg;base64,/, ""), {base64: true});
+                            zip.file(`${item.ctk}_${item.stk}_${item.amount || '0'}.jpg`, dataUrl.replace(/^data:image\/jpeg;base64,/, ""), {base64: true});
                             successCount++;
                         } catch(err) {
-                            console.error(`Lỗi tạo QR dòng ${i}:`, err);
+                            console.error(`Lỗi tải QR cho STK ${item.stk}:`, err);
                         }
-                    }
+                    }));
 
                     if(successCount > 0) {
-                        logDiv.innerText = `Hoàn thành! Đã tạo ${successCount}/${totalRows} mã QR. Đang nén ZIP...`;
+                        logDiv.innerText = `Đang nén file ZIP...`;
                         const content = await zip.generateAsync({type: "blob"});
                         const link = document.createElement('a');
                         link.href = URL.createObjectURL(content);
                         link.download = "QR_HangLoat_NAB.zip";
                         link.click();
-                        logDiv.innerText = `✅ Đã xuất thành công ${successCount} mã QR!`;
+                        logDiv.innerText = `✅ Đã xuất thành công ${successCount}/${itemsToProcess.length} mã QR!`;
                     } else {
-                        logDiv.innerText = "❌ Không tìm thấy dữ liệu hợp lệ trong file!";
+                        logDiv.innerText = "❌ Không thể tạo mã QR nào!";
                     }
                 } catch(err) {
                     logDiv.innerText = "Lỗi đọc file Excel: " + err.message;
@@ -280,7 +285,7 @@
             reader.readAsArrayBuffer(fileInput.files[0]);
         }
 
-        // Xử lý OP4: Nhập danh sách tay (Tên, STK, Số tiền - Mặc định NAB)
+        // Xử lý song song bằng Promise.all cho Nhập tay định mức (OP4)
         async function processOp4() {
             const rows = document.querySelectorAll('.op4-row');
             let dataList = [];
@@ -293,11 +298,11 @@
 
             if (dataList.length === 0) return alert("Vui lòng nhập đủ Tên và STK!");
             const btn = document.getElementById('actionBtn');
-            btn.disabled = true; btn.innerText = "Đang tạo ZIP...";
+            btn.disabled = true; btn.innerText = "Đang xử lý song song...";
+            
             try {
                 const zip = new JSZip();
-                for (let i = 0; i < dataList.length; i++) {
-                    const item = dataList[i];
+                await Promise.all(dataList.map(async (item) => {
                     let vietqrUrl = `https://img.vietqr.io/image/970428-${item.stk}-compact.png?accountName=${encodeURIComponent(item.name)}${item.amount ? '&amount='+item.amount : ''}`;
                     const rawQrImg = await loadNetworkImage(vietqrUrl);
                     
@@ -309,13 +314,21 @@
                     
                     let dataUrl = canvas.toDataURL("image/jpeg", 0.95);
                     zip.file(`${item.name}_${item.stk}_${item.amount || '0'}.jpg`, dataUrl.replace(/^data:image\/jpeg;base64,/, ""), {base64: true});
-                }
+                }));
+
                 const content = await zip.generateAsync({type: "blob"});
-                const link = document.createElement('a'); link.href = URL.createObjectURL(content); link.download = "QR_DinhMuc_NAB.zip"; link.click();
-            } catch (e) { alert("Lỗi khi tạo file!"); } finally { btn.disabled = false; btn.innerText = "Tạo Mã QR"; }
+                const link = document.createElement('a'); 
+                link.href = URL.createObjectURL(content); 
+                link.download = "QR_DinhMuc_NAB.zip"; 
+                link.click();
+            } catch (e) { 
+                alert("Lỗi khi tạo file!"); 
+            } finally { 
+                btn.disabled = false; 
+                btn.innerText = "Tạo Mã QR"; 
+            }
         }
 
-        // Xử lý OP1 & OP2 (Logic cũ giữ nguyên)
         async function processSingleImage(selectedOption) {
             const ctk = document.getElementById('ctk').value.trim();
             const stk = document.getElementById('stk').value.trim();
@@ -370,7 +383,6 @@
             else { processSingleImage(opt); }
         }
 
-        // Tải file Excel mẫu 3 cột chuẩn
         function downloadSampleExcel() {
             const ws = XLSX.utils.json_to_sheet([{ 
                 "Tên Chủ Tài Khoản": "NGUYEN VAN A", 
