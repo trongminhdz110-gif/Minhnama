@@ -176,54 +176,77 @@ const TEMPLATE_URLS = {
             ctx.fillText(text, x, y);
         }
 
-        function drawWrappedText(ctx, label, text, startX, startY, maxWidth) {
-            let fullText = label + " " + text;
-            ctx.textAlign = "left";
-            ctx.textBaseline = "top";
+function drawWrappedText(ctx, label, text, startX, startY, maxWidth) {
+    let fullText = label + " " + text;
+    ctx.textAlign = "left";
+    ctx.textBaseline = "top";
 
-            let fontSize = (fullText.length <= 6) ? 72 : 62;
-            let lineSpacing = 12;
-            let lines = [];
+    let fontSize;
+    let lineSpacing = 10;
+    let lines = [];
 
-            if (fullText.length <= 6) {
-                lines.push(fullText);
+    // 1. Nếu nội dung <= 5 ký tự: Cố định size 75 cho toàn bộ các dòng
+    if (text.length <= 5) {
+        fontSize = 75;
+        ctx.font = `bold ${fontSize}px Arial`;
+        
+        // Vẫn chia dòng nếu 75px quá dài so với khung
+        let words = fullText.trim().split(/\s+/);
+        let currentLine = words[0];
+        lines = [];
+
+        for (let i = 1; i < words.length; i++) {
+            let testLine = currentLine + " " + words[i];
+            if (ctx.measureText(testLine).width > maxWidth) {
+                lines.push(currentLine);
+                currentLine = words[i];
             } else {
-                do {
-                    ctx.font = `bold ${fontSize}px Arial`;
-                    let words = fullText.trim().split(/\s+/);
-                    let currentLine = words[0];
-                    lines = [];
-
-                    for (let i = 1; i < words.length; i++) {
-                        let testLine = currentLine + " " + words[i];
-                        if (ctx.measureText(testLine).width > maxWidth) {
-                            lines.push(currentLine);
-                            currentLine = words[i];
-                        } else {
-                            currentLine = testLine;
-                        }
-                    }
-                    lines.push(currentLine);
-
-                    let maxLineWidth = Math.max(...lines.map(l => ctx.measureText(l).width));
-                    if (maxLineWidth <= maxWidth || fontSize <= 40) {
-                        break;
-                    }
-                    fontSize -= 2;
-                } while (fontSize > 40);
+                currentLine = testLine;
             }
-
-            ctx.font = `bold ${fontSize}px Arial`;
-            ctx.fillStyle = "#FF0000";
-
-            let currentLineHeight = fontSize + lineSpacing;
-            lines.forEach((line, index) => { 
-                ctx.fillText(line, startX, startY + (index * currentLineHeight)); 
-            });
-            
-            return lines.length * currentLineHeight;
         }
+        lines.push(currentLine);
+    } 
+    // 2. Nếu dài hơn 5 ký tự: Bắt đầu size chung từ 65 và tự động co giãn đều nếu vượt khung
+    else {
+        fontSize = 65; 
+        do {
+            ctx.font = `bold ${fontSize}px Arial`;
+            let words = fullText.trim().split(/\s+/);
+            let currentLine = words[0];
+            let testLines = [];
 
+            for (let i = 1; i < words.length; i++) {
+                let testLine = currentLine + " " + words[i];
+                if (ctx.measureText(testLine).width > maxWidth) {
+                    testLines.push(currentLine);
+                    currentLine = words[i];
+                } else {
+                    currentLine = testLine;
+                }
+            }
+            testLines.push(currentLine);
+
+            let maxLineWidth = Math.max(...testLines.map(l => ctx.measureText(l).width));
+            
+            if (maxLineWidth <= maxWidth || fontSize <= 36) {
+                lines = testLines;
+                break;
+            }
+            fontSize -= 2; 
+        } while (fontSize > 36);
+    }
+
+    // TOÀN BỘ CÁC DÒNG SẼ DÙNG CHUNG MỘT KÍCH THƯỚC NÀY KHI VẼ
+    ctx.font = `bold ${fontSize}px Arial`;
+    ctx.fillStyle = "#FF0000";
+
+    let currentLineHeight = fontSize + lineSpacing;
+    lines.forEach((line, index) => { 
+        ctx.fillText(line, startX, startY + (index * currentLineHeight)); 
+    });
+    
+    return lines.length * currentLineHeight;
+}
         function drawStandardAmountQR(ctx, qrImg, name, stk, amount) {
             ctx.fillStyle = "#FFFFFF";
             ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
