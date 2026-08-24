@@ -124,11 +124,10 @@
     </div>
 
     <script>
-        // Cấu hình link GitHub Raw chứa ảnh template của bạn
-const TEMPLATE_URLS = {
-    op1: 'https://raw.githubusercontent.com/trongminhdz110-gif/Minhnama/main/template_op1.jpg',
-    op2: 'https://raw.githubusercontent.com/trongminhdz110-gif/Minhnama/main/template_op2.jpg'
-};
+        const TEMPLATE_URLS = {
+            op1: 'https://raw.githubusercontent.com/trongminhdz110-gif/Minhnama/main/template_op1.jpg',
+            op2: 'https://raw.githubusercontent.com/trongminhdz110-gif/Minhnama/main/template_op2.jpg'
+        };
 
         function toggleMode() {
             const opt = document.querySelector('input[name="optionType"]:checked').value;
@@ -164,9 +163,10 @@ const TEMPLATE_URLS = {
             input.value = val ? Number(val).toLocaleString('vi-VN') : '';
         }
 
-        function drawFitText(ctx, text, x, y, maxWidth) {
-            let size = 65;
-            ctx.textAlign = "center";
+        function drawFitText(ctx, text, x, y, maxWidth, maxFontSize = 55) {
+            if (!text) return;
+            let size = maxFontSize;
+            ctx.textAlign = "left";
             ctx.textBaseline = "middle";
             do {
                 ctx.font = `bold ${size}px Arial`;
@@ -176,79 +176,6 @@ const TEMPLATE_URLS = {
             ctx.fillText(text, x, y);
         }
 
-function drawWrappedText(ctx, label, text, startX, startY, maxWidth) {
-    let fullText = label + " " + text;
-    ctx.textAlign = "left";
-    ctx.textBaseline = "top";
-
-    let fontSize;
-    let lineSpacing = 8;
-    let lines = [];
-
-    // 1. Nếu nội dung <= 5 ký tự: Size 75, kiểm tra ngắt dòng an toàn
-    if (text.length <= 5) {
-        fontSize = 75;
-        ctx.font = `bold ${fontSize}px Arial`;
-        let words = fullText.trim().split(/\s+/);
-        let currentLine = words[0];
-        lines = [];
-
-        for (let i = 1; i < words.length; i++) {
-            let testLine = currentLine + " " + words[i];
-            if (ctx.measureText(testLine).width > maxWidth) {
-                lines.push(currentLine);
-                currentLine = words[i];
-            } else {
-                currentLine = testLine;
-            }
-        }
-        lines.push(currentLine);
-    } 
-    // 2. Nếu dài hơn 5 ký tự: Khởi điểm từ 65, tự động xuống dòng và co giãn đều các dòng
-    else {
-        fontSize = 65; 
-        do {
-            ctx.font = `bold ${fontSize}px Arial`;
-            let words = fullText.trim().split(/\s+/);
-            let currentLine = words[0];
-            let testLines = [];
-
-            for (let i = 1; i < words.length; i++) {
-                let testLine = currentLine + " " + words[i];
-                // NẾU VƯỢT QUÁ CHIỀU RỘNG KHUNG -> BẮT BUỘC XUỐNG DÒNG MỚI
-                if (ctx.measureText(testLine).width > maxWidth) {
-                    testLines.push(currentLine);
-                    currentLine = words[i];
-                } else {
-                    testLine = currentLine;
-                }
-            }
-            testLines.push(currentLine);
-
-            // Kiểm tra xem số dòng sinh ra có bị tràn chiều cao ô hoặc font quá nhỏ không
-            // Nếu các dòng đều nằm gọn trong maxWidth hoặc font đã giảm tối thiểu (32px) thì dừng
-            let maxLineWidth = Math.max(...testLines.map(l => ctx.measureText(l).width));
-            
-            if (maxLineWidth <= maxWidth || fontSize <= 32) {
-                lines = testLines;
-                break;
-            }
-            fontSize -= 2; // Nếu vẫn vượt khung thì giảm đều size xuống cho đến khi vừa khít
-        } while (fontSize > 32);
-    }
-
-    // TOÀN BỘ CÁC DÒNG SẺ ĐƯỢC VẼ VỚI CHUNG MỘT FONT SIZE ĐÃ TÍNH TOÁN
-    ctx.font = `bold ${fontSize}px Arial`;
-    ctx.fillStyle = "#FF0000";
-
-    let currentLineHeight = fontSize + lineSpacing;
-    lines.forEach((line, index) => { 
-        ctx.fillText(line, startX, startY + (index * currentLineHeight)); 
-    });
-    
-    // Trả về tổng chiều cao khối chữ để dòng tiếp theo tự động cộng dồn xuống dưới, không bị đè chữ
-    return lines.length * currentLineHeight;
-}
         function drawStandardAmountQR(ctx, qrImg, name, stk, amount) {
             ctx.fillStyle = "#FFFFFF";
             ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
@@ -438,16 +365,27 @@ function drawWrappedText(ctx, label, text, startX, startY, maxWidth) {
                     if (selectedOption === 'op1' && index === 2) {
                         const displayLabel = (mtk && mtk !== "0") ? "MTK: " : "STK: ";
                         const displayVal = (mtk && mtk !== "0") ? mtk : stk;
-                        drawFitText(ctx, displayLabel + displayVal, box.x + box.w/2, box.y + box.h/2, box.w - 20);
+                        drawFitText(ctx, displayLabel + displayVal, box.x + 10, box.y + box.h/2, box.w - 20, 50);
                         return;
                     }
-                    let curY = box.y + 10;
-                    curY += drawWrappedText(ctx, "CTK:", ctk, box.x + 30, curY, box.w);
-                    curY += 10;
-                    curY += drawWrappedText(ctx, "STK:", stk, box.x + 30, curY, box.w);
-                    if(mtk && mtk !== "0") {
-                        curY += 10;
-                        drawWrappedText(ctx, "MTK:", mtk, box.x + 30, curY, box.w);
+                    
+                    ctx.fillStyle = "#FF0000";
+                    ctx.font = "bold 48px Arial";
+                    ctx.textBaseline = "top";
+
+                    let startX = box.x + 30;
+                    let currentY = box.y + 15;
+
+                    if (ctk) {
+                        ctx.fillText("CTK: " + ctk, startX, currentY);
+                        currentY += 65;
+                    }
+                    if (stk) {
+                        ctx.fillText("STK: " + stk, startX, currentY);
+                        currentY += 65;
+                    }
+                    if (mtk && mtk !== "0") {
+                        ctx.fillText("MTK: " + mtk, startX, currentY);
                     }
                 });
 
@@ -455,7 +393,7 @@ function drawWrappedText(ctx, label, text, startX, startY, maxWidth) {
                 document.getElementById('downloadBtn').classList.remove('hidden');
                 document.getElementById('pdfBtn').classList.remove('hidden');
             } catch (e) { 
-                alert("Lỗi xử lý (có thể do link GitHub chặn CORS hoặc sai đường dẫn): " + e.message); 
+                alert("Lỗi xử lý: " + e.message); 
             } finally { 
                 btn.disabled = false; 
                 btn.innerText = "Tạo Mã QR"; 
