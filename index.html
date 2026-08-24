@@ -111,20 +111,21 @@
         <button id="actionBtn" onclick="handleGenerate()" class="w-full bg-blue-600 text-white font-bold p-3.5 mt-6 rounded-xl hover:bg-blue-700 transition shadow-md text-base">✨ Tạo Mã QR & Xem Trước (OP1 / OP2)</button>
         <div id="loadingStatus" class="hidden mt-3 text-center text-sm font-bold text-amber-600">Đang tải dữ liệu và tạo ảnh, vui lòng đợi giây lát...</div>
 
-        <!-- KHUNG PREVIEW TRỰC TIẾP & THANH ĐIỀU CHỈNH RIÊNG BIỆT CHO TEXT -->
+        <!-- KHUNG PREVIEW TRỰC TIẾP & NÚT CỘNG TRỪ CỠ CHỮ -->
         <div id="livePreviewSection" class="mt-6 border-t border-gray-200 pt-5 hidden">
-            <h3 class="text-sm font-bold text-gray-700 mb-3 text-center">👁️ Khung Xem Trước & Tinh Chỉnh Cỡ Chữ (Không Lag):</h3>
+            <h3 class="text-sm font-bold text-gray-700 mb-3 text-center">👁️ Khung Xem Trước & Tinh Chỉnh Cỡ Chữ:</h3>
             
-            <!-- THANH ĐIỀU CHỈNH TAY KHÔNG ẢNH HƯỞNG QR -->
-            <div class="mb-4 p-4 bg-amber-50 rounded-xl border border-amber-200 space-y-2">
-                <div class="flex justify-between items-center">
-                    <label class="text-xs font-bold text-amber-900">🎚️ Kéo chỉnh riêng cỡ chữ (Mượt mà, không load lại mạng):</label>
-                    <span id="fontSizeVal" class="text-xs font-bold text-red-600 bg-white px-2 py-0.5 rounded border border-amber-300">Mặc định thông minh</span>
+            <!-- BẢNG ĐIỀU KHIỂN CỘNG TRỪ CỠ CHỮ (SIÊU NHẸ, KHÔNG LAG) -->
+            <div class="mb-4 p-4 bg-amber-50 rounded-xl border border-amber-200 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div>
+                    <label class="text-xs font-bold text-amber-900 block">🎛️ Tinh chỉnh kích thước chữ:</label>
+                    <span id="fontSizeVal" class="text-xs font-bold text-red-600">Mặc định thông minh (0px)</span>
                 </div>
-                <input type="range" id="customFontSizeOffset" min="-15" max="20" value="0" step="1" 
-                       oninput="updateTextSizeOnly(this.value)" 
-                       class="w-full accent-amber-600 cursor-pointer">
-                <p class="text-[11px] text-amber-700 italic">💡 Mẹo: Logic tự động (3,5 từ và rớt dòng) được giữ nguyên. Thanh này giúp bạn bù trừ to/nhỏ thêm nếu muốn.</p>
+                <div class="flex items-center gap-2">
+                    <button onclick="changeFontSize(-2)" class="bg-white border border-amber-300 text-amber-900 font-extrabold w-10 h-10 rounded-lg shadow-sm hover:bg-amber-100 transition text-lg">-</button>
+                    <button onclick="resetFontSize()" class="bg-white border border-amber-300 text-xs font-bold px-3 h-10 rounded-lg shadow-sm hover:bg-amber-100 transition text-amber-800">Mặc định</button>
+                    <button onclick="changeFontSize(2)" class="bg-white border border-amber-300 text-amber-900 font-extrabold w-10 h-10 rounded-lg shadow-sm hover:bg-amber-100 transition text-lg">+</button>
+                </div>
             </div>
 
             <div class="bg-gray-50 p-3 rounded-xl border border-gray-200 text-center">
@@ -148,6 +149,7 @@
         let cachedRawQR = null;
         let lastQrUrl = "";
         let lastRenderData = null;
+        let currentOffset = 0; // Biến lưu mức độ tăng giảm chữ
 
         window.addEventListener('DOMContentLoaded', () => {
             toggleMode();
@@ -170,17 +172,29 @@
             }
         }
 
-        function updateTextSizeOnly(offsetVal) {
-            let label = offsetVal == 0 ? "Mặc định thông minh" : (offsetVal > 0 ? `+${offsetVal}px` : `${offsetVal}px`);
-            document.getElementById('fontSizeVal').innerText = label;
+        function changeFontSize(val) {
+            currentOffset += val;
+            currentOffset = Math.max(-15, Math.min(currentOffset, 20)); // Giới hạn an toàn
+            updateLabelAndRender();
+        }
+
+        function resetFontSize() {
+            currentOffset = 0;
+            updateLabelAndRender();
+        }
+
+        function updateLabelAndRender() {
+            let label = currentOffset == 0 ? "Mặc định thông minh (0px)" : (currentOffset > 0 ? `+${currentOffset}px` : `${currentOffset}px`);
+            document.getElementById('fontSizeValinnerText' || 'fontSizeVal').innerText = label;
             if (lastRenderData) {
-                renderCanvasFromCache(parseInt(offsetVal));
+                renderCanvasFromCache(currentOffset);
             }
         }
 
         async function handleGenerate() {
             const opt = document.querySelector('input[name="optionType"]:checked').value;
             if (opt === 'op1' || opt === 'op2') {
+                currentOffset = 0; // Reset về mặc định khi bấm tạo mới
                 await processSingleImage(opt);
             } else if (opt === 'op3') {
                 processExcelBatch();
@@ -304,7 +318,7 @@
                 }
 
                 lastRenderData = { selectedOption, ctk, stk, mtk };
-                renderCanvasFromCache(parseInt(document.getElementById('customFontSizeOffset').value));
+                renderCanvasFromCache(currentOffset);
 
                 document.getElementById('livePreviewSection').classList.remove('hidden');
                 statusDiv.classList.add('hidden');
