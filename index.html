@@ -123,9 +123,7 @@
                         <span id="ctkSizeVal" class="text-xs font-bold text-red-600">0px</span>
                     </div>
                     <input type="range" id="ctkSizeSlider" min="-50" max="80" value="0" step="2" 
-                        oninput="previewCtkValue(this.value)" 
-                        onmouseup="applyCtkValue(this.value)" 
-                        ontouchend="applyCtkValue(this.value)"
+                        oninput="onCtkSliderInput(this.value)" 
                         class="w-full accent-amber-600 cursor-pointer h-2 bg-amber-200 rounded-lg">
                 </div>
 
@@ -136,9 +134,7 @@
                         <span id="stkSizeVal" class="text-xs font-bold text-blue-600">0px</span>
                     </div>
                     <input type="range" id="stkSizeSlider" min="-50" max="80" value="0" step="2" 
-                        oninput="previewStkValue(this.value)" 
-                        onmouseup="applyStkValue(this.value)" 
-                        ontouchend="applyStkValue(this.value)"
+                        oninput="onStkSliderInput(this.value)" 
                         class="w-full accent-blue-600 cursor-pointer h-2 bg-sky-200 rounded-lg">
                 </div>
             </div>
@@ -167,6 +163,9 @@
         let currentCtkOffset = 0;
         let currentStkOffset = 0;
 
+        // Biến lưu ảnh nền sạch (Đã gồm Template + 4 ô QR) để khi kéo thanh trượt chỉ việc bốc ra vẽ chữ đè lên, không cắt QR lại nữa
+        let baseCanvasSnapshot = null; 
+
         window.addEventListener('DOMContentLoaded', () => {
             toggleMode();
         });
@@ -188,24 +187,20 @@
             }
         }
 
-        function previewCtkValue(val) {
+        // Xử lý mượt mà khi kéo thanh trượt CTK
+        function onCtkSliderInput(val) {
             let num = parseInt(val);
             document.getElementById('ctkSizeVal').innerText = (num > 0 ? `+${num}` : num) + "px";
-        }
-        function applyCtkValue(val) {
-            currentCtkOffset = parseInt(val);
-            previewCtkValue(currentCtkOffset);
-            if (lastRenderData) renderCanvasFromCache();
+            currentCtkOffset = num;
+            if (baseCanvasSnapshot) redrawTextOnly();
         }
 
-        function previewStkValue(val) {
+        // Xử lý mượt mà khi kéo thanh trượt STK & MTK
+        function onStkSliderInput(val) {
             let num = parseInt(val);
             document.getElementById('stkSizeVal').innerText = (num > 0 ? `+${num}` : num) + "px";
-        }
-        function applyStkValue(val) {
-            currentStkOffset = parseInt(val);
-            previewStkValue(currentStkOffset);
-            if (lastRenderData) renderCanvasFromCache();
+            currentStkOffset = num;
+            if (baseCanvasSnapshot) redrawTextOnly();
         }
 
         async function handleGenerate() {
@@ -215,8 +210,8 @@
                 currentStkOffset = 0;
                 document.getElementById('ctkSizeSlider').value = 0;
                 document.getElementById('stkSizeSlider').value = 0;
-                previewCtkValue(0);
-                previewStkValue(0);
+                document.getElementById('ctkSizeVal').innerText = "0px";
+                document.getElementById('stkSizeVal').innerText = "0px";
                 await processSingleImage(opt);
             } else if (opt === 'op3') {
                 processExcelBatch();
@@ -261,7 +256,6 @@
             ctx.fillText(text, x, y);
         }
 
-        // Hàm vẽ riêng biệt có hỗ trợ tuỳ chỉnh offset riêng từng loại (CTK hoặc STK/MTK)
         function drawCustomTextLine(ctx, label, text, startX, startY, maxWidth, customOffset = 0) {
             let fullText = label + " " + text;
             ctx.textAlign = "left";
@@ -341,7 +335,30 @@
                 }
 
                 lastRenderData = { selectedOption, ctk, stk, mtk };
-                renderCanvasFromCache();
+                
+                // --- BƯỚC 1: TẠO ẢNH NỀN GỐC (CHỈ CHẠY 1 LẦN DUY NHẤT) ---
+                const templateImg = cachedTemplates[selectedOption];
+                const rawQrImg = cachedRawQR;
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = templateImg.width;
+                tempCanvas.height = templateImg.height;
+                const tCtx = tempCanvas.getContext('2d');
+                tCtx.drawImage(templateImg, 0, 0);
+
+                const baseBoxes = selectedOption === 'op1' ? 
+                    [ {x: 339, y: 367, w: 1132, h: 1132}, {x: 1836, y: 369, w: 1127, h: 1126}, {x: 266, y: 2532, w: 761, h: 709}, { x: 1833, y: 2627, w: 1127, h: 1120 } ] :
+                    [ {x: 339, y: 367, w: 1132, h: 1132}, {x: 1836, y: 369, w: 1127, h: 1126}, {x: 339, y: 2618, w: 1133, h: 1128}, {x: 1835, y: 2623, w: 1135, h: 1128} ];
+
+                const croppedQR = cropPureQR(rawQrImg);
+                baseBoxes.forEach((box) => {
+                    tCtx.drawImage(croppedQR, box.x, box.y, box.w, box.h);
+                });
+
+                // Lưu ảnh nền sạch vào biến snapshot
+                baseCanvasSnapshot = tempCanvas;
+
+                // --- BƯỚC 2: VẼ CHỮ LẦN ĐẦU ---
+                redrawTextOnly();
 
                 document.getElementById('livePreviewSection').classList.remove('hidden');
                 statusDiv.classList.add('hidden');
@@ -351,22 +368,18 @@
             }
         }
 
-        function renderCanvasFromCache() {
-            if (!lastRenderData) return;
+        // Hàm vẽ lại chữ cực kỳ nhanh gọn (Dùng khi kéo thanh trượt, tuyệt đối không đụng tới QR hay Template)
+        function redrawTextOnly() {
+            if (!lastRenderData || !baseCanvasSnapshot) return;
             const { selectedOption, ctk, stk, mtk } = lastRenderData;
-            
-            const templateImg = cachedTemplates[selectedOption];
-            const rawQrImg = cachedRawQR;
 
             const canvas = document.getElementById('resultCanvas');
             const ctx = canvas.getContext('2d');
-            canvas.width = templateImg.width; 
-            canvas.height = templateImg.height;
-            ctx.drawImage(templateImg, 0, 0);
+            canvas.width = baseCanvasSnapshot.width; 
+            canvas.height = baseCanvasSnapshot.height;
 
-            const baseBoxes = selectedOption === 'op1' ? 
-                [ {x: 339, y: 367, w: 1132, h: 1132}, {x: 1836, y: 369, w: 1127, h: 1126}, {x: 266, y: 2532, w: 761, h: 709}, { x: 1833, y: 2627, w: 1127, h: 1120 } ] :
-                [ {x: 339, y: 367, w: 1132, h: 1132}, {x: 1836, y: 369, w: 1127, h: 1126}, {x: 339, y: 2618, w: 1133, h: 1128}, {x: 1835, y: 2623, w: 1135, h: 1128} ];
+            // Dán đè ảnh nền sạch (đã có sẵn template và QR) lên canvas
+            ctx.drawImage(baseCanvasSnapshot, 0, 0);
             
             const textBoxes = selectedOption === 'op1' ? 
                 [ 
@@ -382,14 +395,7 @@
                     { x: 1724, y: 3914, w: 1386, h: 367 } 
                 ];
 
-            const croppedQR = cropPureQR(rawQrImg);
-
-            // Vẽ toàn bộ 4 ô QR giữ nguyên chuẩn
-            baseBoxes.forEach((box) => {
-                ctx.drawImage(croppedQR, box.x, box.y, box.w, box.h);
-            });
-            
-            // Vẽ chữ với Thanh 1 cho CTK, Thanh 2 cho STK & MTK
+            // Tiến hành in các dòng chữ đè lên
             textBoxes.forEach((box, index) => {
                 if (selectedOption === 'op1' && index === 2) {
                     const displayLabel = (mtk && mtk !== "0") ? "MTK: " : "STK: ";
@@ -398,15 +404,9 @@
                     return;
                 }
                 let curY = box.y + 10;
-                
-                // Dòng CTK (Dùng Thanh 1: currentCtkOffset)
                 let ctkHeight = drawCustomTextLine(ctx, "CTK:", ctk, box.x + 30, curY, box.w, currentCtkOffset);
                 curY += ctkHeight + 5;
-                
-                // Dòng STK (Dùng Thanh 2: currentStkOffset)
                 let stkHeight = drawCustomTextLine(ctx, "STK:", stk, box.x + 30, curY, box.w, currentStkOffset);
-                
-                // Dòng MTK (Nếu có - Dùng chung Thanh 2: currentStkOffset)
                 if(mtk && mtk !== "0") {
                     curY += stkHeight + 5;
                     drawCustomTextLine(ctx, "MTK:", mtk, box.x + 30, curY, box.w, currentStkOffset);
