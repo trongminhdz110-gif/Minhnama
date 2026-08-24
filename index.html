@@ -182,15 +182,13 @@ function drawWrappedText(ctx, label, text, startX, startY, maxWidth) {
     ctx.textBaseline = "top";
 
     let fontSize;
-    let lineSpacing = 10;
+    let lineSpacing = 8;
     let lines = [];
 
-    // 1. Nếu nội dung <= 5 ký tự: Cố định size 75 cho toàn bộ các dòng
+    // 1. Nếu nội dung <= 5 ký tự: Size 75, kiểm tra ngắt dòng an toàn
     if (text.length <= 5) {
         fontSize = 75;
         ctx.font = `bold ${fontSize}px Arial`;
-        
-        // Vẫn chia dòng nếu 75px quá dài so với khung
         let words = fullText.trim().split(/\s+/);
         let currentLine = words[0];
         lines = [];
@@ -206,7 +204,7 @@ function drawWrappedText(ctx, label, text, startX, startY, maxWidth) {
         }
         lines.push(currentLine);
     } 
-    // 2. Nếu dài hơn 5 ký tự: Bắt đầu size chung từ 65 và tự động co giãn đều nếu vượt khung
+    // 2. Nếu dài hơn 5 ký tự: Khởi điểm từ 65, tự động xuống dòng và co giãn đều các dòng
     else {
         fontSize = 65; 
         do {
@@ -217,26 +215,29 @@ function drawWrappedText(ctx, label, text, startX, startY, maxWidth) {
 
             for (let i = 1; i < words.length; i++) {
                 let testLine = currentLine + " " + words[i];
+                // NẾU VƯỢT QUÁ CHIỀU RỘNG KHUNG -> BẮT BUỘC XUỐNG DÒNG MỚI
                 if (ctx.measureText(testLine).width > maxWidth) {
                     testLines.push(currentLine);
                     currentLine = words[i];
                 } else {
-                    currentLine = testLine;
+                    testLine = currentLine;
                 }
             }
             testLines.push(currentLine);
 
+            // Kiểm tra xem số dòng sinh ra có bị tràn chiều cao ô hoặc font quá nhỏ không
+            // Nếu các dòng đều nằm gọn trong maxWidth hoặc font đã giảm tối thiểu (32px) thì dừng
             let maxLineWidth = Math.max(...testLines.map(l => ctx.measureText(l).width));
             
-            if (maxLineWidth <= maxWidth || fontSize <= 36) {
+            if (maxLineWidth <= maxWidth || fontSize <= 32) {
                 lines = testLines;
                 break;
             }
-            fontSize -= 2; 
-        } while (fontSize > 36);
+            fontSize -= 2; // Nếu vẫn vượt khung thì giảm đều size xuống cho đến khi vừa khít
+        } while (fontSize > 32);
     }
 
-    // TOÀN BỘ CÁC DÒNG SẼ DÙNG CHUNG MỘT KÍCH THƯỚC NÀY KHI VẼ
+    // TOÀN BỘ CÁC DÒNG SẺ ĐƯỢC VẼ VỚI CHUNG MỘT FONT SIZE ĐÃ TÍNH TOÁN
     ctx.font = `bold ${fontSize}px Arial`;
     ctx.fillStyle = "#FF0000";
 
@@ -245,6 +246,7 @@ function drawWrappedText(ctx, label, text, startX, startY, maxWidth) {
         ctx.fillText(line, startX, startY + (index * currentLineHeight)); 
     });
     
+    // Trả về tổng chiều cao khối chữ để dòng tiếp theo tự động cộng dồn xuống dưới, không bị đè chữ
     return lines.length * currentLineHeight;
 }
         function drawStandardAmountQR(ctx, qrImg, name, stk, amount) {
