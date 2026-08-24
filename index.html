@@ -322,7 +322,7 @@
             const mtk = document.getElementById('mtk').value.trim();
             if(!ctk || !stk) { alert("Nhập đủ CTK và STK!"); return; }
             const accountForQr = (mtk && mtk !== "0") ? mtk : stk;
-            const templatePath = selectedOption === 'op1' ? 'template_op1.jpg' : 'template_op2.jpg';
+            const templatePath = (selectedOption === 'op1' ? 'template_op1.jpg' : 'template_op2.jpg') + '?v=' + new Date().getTime();
             const vietqrUrl = `https://img.vietqr.io/image/${document.getElementById('bankBin').value}-${accountForQr}-compact.png?accountName=${encodeURIComponent(ctk)}`;
             const btn = document.getElementById('actionBtn');
             btn.disabled = true; btn.innerText = "Đang xử lý...";
