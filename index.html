@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
-    <title>Phần Mềm Tạo QR - Hàng Loạt & Mica</title>
+    <title>Phần Mềm Tạo QR - Test Local</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -17,13 +15,19 @@
         <div class="flex flex-col sm:flex-row justify-between items-center mb-6 pb-4 border-b border-gray-100 gap-3">
             <div>
                 <h1 class="text-2xl font-extrabold text-gray-800 text-center sm:text-left">Tạo Mã QR Thanh Toán</h1>
-                <p class="text-xs font-semibold text-blue-600 tracking-wider uppercase text-center sm:text-left mt-0.5">Hệ thống Mica & Hàng Loạt</p>
+                <p class="text-xs font-semibold text-blue-600 tracking-wider uppercase text-center sm:text-left mt-0.5">Test Trực Tiếp Trên Máy Tính</p>
             </div>
             <div class="px-4 py-2.5 rounded-xl shadow-sm border border-yellow-400 flex items-center justify-center" style="background-color: #FFDE00;">
                 <img src="logo_namabank.png" alt="Nam A Bank" class="h-7 object-contain">
             </div>
         </div>
         
+        <!-- CHỌN FILE TEMPLATE TỪ MÁY TÍNH -->
+        <div class="mb-4 p-4 bg-amber-50 rounded-xl border border-amber-200">
+            <label class="block text-amber-900 font-bold mb-1 text-sm">📁 Chọn file Template (OP1 hoặc OP2) từ máy:</label>
+            <input type="file" id="localTemplateFile" accept="image/*" class="w-full text-sm text-gray-700 bg-white p-2 border border-amber-300 rounded-lg">
+        </div>
+
         <div class="mb-4 p-4 bg-blue-50/60 rounded-xl border border-blue-100">
             <label class="block text-gray-700 font-bold mb-2">Chọn loại thiết kế:</label>
             <div class="flex flex-col gap-3">
@@ -168,29 +172,36 @@
             ctx.fillText(text, x, y);
         }
 
-        // Logic tự động điều chỉnh font và dãn dòng dựa vào số từ của riêng phần tên (không tính nhãn "CTK:")
-        function drawWrappedText(ctx, label, text, startX, startY, maxWidth, maxWordsPerLine = 6) {
-            // Đếm số từ của riêng biến 'text' (tên chủ tài khoản)
-            let wordCount = text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
+        // Logic chia dòng với kích thước chữ cố định (đồng đều mọi dòng)
+        function drawWrappedText(ctx, label, text, startX, startY, maxWidth) {
+            let fullText = label + " " + text;
+            let words = fullText.trim().split(/\s+/);
             
-            // Nếu từ <= 6 thì phóng to chữ và dãn dòng rộng hơn, ngược lại dùng chuẩn
-            let currentFontSize = (wordCount <= 6) ? 78 : 65;
-            let currentLineSpacing = (wordCount <= 6) ? 95 : 75;
+            let currentFontSize = 65; // Cố định size chữ đồng đều cho mọi dòng
+            let currentLineSpacing = 78; // Khoảng cách dãn dòng vừa vặn
 
             ctx.font = `bold ${currentFontSize}px Arial`;
             ctx.fillStyle = "#FF0000";
             ctx.textAlign = "left";
             ctx.textBaseline = "top";
 
-            let fullText = label + " " + text;
-            let words = fullText.split(' ');
             let lines = [];
-            for (let i = 0; i < words.length; i += maxWordsPerLine) {
-                lines.push(words.slice(i, i + maxWordsPerLine).join(' '));
+            let currentLine = words[0];
+            for (let i = 1; i < words.length; i++) {
+                let testLine = currentLine + " " + words[i];
+                if (ctx.measureText(testLine).width > maxWidth) {
+                    lines.push(currentLine);
+                    currentLine = words[i];
+                } else {
+                    currentLine = testLine;
+                }
             }
+            lines.push(currentLine);
+
             lines.forEach((line, index) => { 
                 ctx.fillText(line, startX, startY + (index * currentLineSpacing)); 
             });
+            
             return lines.length * currentLineSpacing;
         }
 
@@ -328,30 +339,73 @@
             } catch (e) { alert("Lỗi khi tạo file!"); } finally { btn.disabled = false; btn.innerText = "Tạo Mã QR"; }
         }
 
+        // Đọc file template trực tiếp từ máy tính
+        function loadLocalImage(file) {
+            return new Promise((res, rej) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => res(img);
+                    img.onerror = rej;
+                    img.src = e.target.result;
+                };
+                reader.onerror = rej;
+                reader.readAsDataURL(file);
+            });
+        }
+
         async function processSingleImage(selectedOption) {
+            const templateInput = document.getElementById('localTemplateFile');
+            if (templateInput.files.length === 0) {
+                alert("Vui lòng chọn file template từ máy tính trước!");
+                return;
+            }
+
             const ctk = document.getElementById('ctk').value.trim();
             const stk = document.getElementById('stk').value.trim();
             const mtk = document.getElementById('mtk').value.trim();
             if(!ctk || !stk) { alert("Nhập đủ CTK và STK!"); return; }
+            
             const accountForQr = (mtk && mtk !== "0") ? mtk : stk;
-            const templatePath = (selectedOption === 'op1' ? 'template_op1.jpg' : 'template_op2.jpg') + '?v=' + new Date().getTime();
             const vietqrUrl = `https://img.vietqr.io/image/${document.getElementById('bankBin').value}-${accountForQr}-compact.png?accountName=${encodeURIComponent(ctk)}`;
             const btn = document.getElementById('actionBtn');
             btn.disabled = true; btn.innerText = "Đang xử lý...";
+            
             try {
-                const [rawQrImg, templateImg] = await Promise.all([loadNetworkImage(vietqrUrl), loadNetworkImage(templatePath)]);
+                const [rawQrImg, templateImg] = await Promise.all([
+                    loadNetworkImage(vietqrUrl), 
+                    loadLocalImage(templateInput.files[0])
+                ]);
+
                 const canvas = document.getElementById('resultCanvas');
                 const ctx = canvas.getContext('2d');
-                canvas.width = templateImg.width; canvas.height = templateImg.height;
-                canvas.classList.remove('hidden'); ctx.drawImage(templateImg, 0, 0);
+                canvas.width = templateImg.width; 
+                canvas.height = templateImg.height;
+                canvas.classList.remove('hidden'); 
+                ctx.drawImage(templateImg, 0, 0);
+
                 const boxes = selectedOption === 'op1' ? 
                     [ {x: 339, y: 367, w: 1132, h: 1132}, {x: 1836, y: 369, w: 1127, h: 1126}, {x: 266, y: 2532, w: 761, h: 709}, { x: 1833, y: 2627, w: 1127, h: 1120 } ] :
                     [ {x: 339, y: 367, w: 1132, h: 1132}, {x: 1836, y: 369, w: 1127, h: 1126}, {x: 339, y: 2618, w: 1133, h: 1128}, {x: 1835, y: 2623, w: 1135, h: 1128} ];
+                
+                // Đã chỉnh lại y của ô số 1 cho OP1 lên 1650 để cân đối, và giữ chuẩn cho OP2
                 const textBoxes = selectedOption === 'op1' ? 
-                    [ {x: 287, y: 1674, w: 1243, h: 348}, {x: 1765, y: 1653, w: 1286, h: 380}, {x: 214, y: 3263, w: 870, h: 174}, {x: 1771, y: 3920, w: 1286, h: 344} ] :
-                    [ {x: 287, y: 1674, w: 1243, h: 348}, {x: 1765, y: 1653, w: 1286, h: 380}, {x: 272, y: 3913, w: 1280, h: 361}, {x: 1771, y: 3920, w: 1286, h: 344} ];
+                    [ 
+                        { x: 268, y: 1650, w: 1269, h: 338 }, 
+                        { x: 1747, y: 1674, w: 1352, h: 352 }, 
+                        { x: 214, y: 3263, w: 870, h: 174 }, 
+                        { x: 1743, y: 3917, w: 1345, h: 357 } 
+                    ] :
+                    [ 
+                        { x: 238, y: 1662, w: 1378, h: 375 }, 
+                        { x: 1728, y: 1666, w: 1378, h: 379 }, 
+                        { x: 223, y: 3910, w: 1385, h: 375 }, 
+                        { x: 1724, y: 3914, w: 1386, h: 367 } 
+                    ];
+
                 const croppedQR = cropPureQR(rawQrImg);
                 boxes.forEach(box => { ctx.drawImage(croppedQR, box.x, box.y, box.w, box.h); });
+                
                 textBoxes.forEach((box, index) => {
                     if (selectedOption === 'op1' && index === 2) {
                         const displayLabel = (mtk && mtk !== "0") ? "MTK: " : "STK: ";
@@ -359,20 +413,25 @@
                         drawFitText(ctx, displayLabel + displayVal, box.x + box.w/2, box.y + box.h/2, box.w - 20);
                         return;
                     }
-                    let curY = box.y + 20;
+                    let curY = box.y + 10;
                     curY += drawWrappedText(ctx, "CTK:", ctk, box.x + 30, curY, box.w);
-                    curY += 20;
+                    curY += 10;
                     curY += drawWrappedText(ctx, "STK:", stk, box.x + 30, curY, box.w);
                     if(mtk && mtk !== "0") {
-                        curY += 20;
+                        curY += 10;
                         drawWrappedText(ctx, "MTK:", mtk, box.x + 30, curY, box.w);
                     }
                 });
+
                 document.getElementById('downloadBtn').href = canvas.toDataURL("image/jpeg", 0.95);
                 document.getElementById('downloadBtn').classList.remove('hidden');
                 document.getElementById('pdfBtn').classList.remove('hidden');
-            } catch (e) { alert("Lỗi template! Kiểm tra file trên GitHub."); } 
-            finally { btn.disabled = false; btn.innerText = "Tạo Mã QR"; }
+            } catch (e) { 
+                alert("Lỗi xử lý file template! Hãy chắc chắn bạn đã chọn file ảnh hợp lệ."); 
+            } finally { 
+                btn.disabled = false; 
+                btn.innerText = "Tạo Mã QR"; 
+            }
         }
 
         async function handleGenerate() {
@@ -393,7 +452,15 @@
             XLSX.writeFile(wb, "mau_qr_hang_loat_nab.xlsx");
         }
 
-        async function loadNetworkImage(url) { return new Promise((res, rej) => { const i = new Image(); i.crossOrigin = "Anonymous"; i.onload = () => res(i); i.onerror = rej; i.src = url; }); }
+        async function loadNetworkImage(url) { 
+            return new Promise((res, rej) => { 
+                const i = new Image(); 
+                i.crossOrigin = "Anonymous"; 
+                i.onload = () => res(i); 
+                i.onerror = rej; 
+                i.src = url; 
+            }); 
+        }
 
         function cropPureQR(img) {
             const size = Math.min(img.width, img.height) * 0.72;
