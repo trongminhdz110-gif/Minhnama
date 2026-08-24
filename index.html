@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <title>Phần Mềm Tạo QR - Test Local</title>
+    <title>Phần Mềm Tạo QR - Nam A Bank</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -15,17 +15,11 @@
         <div class="flex flex-col sm:flex-row justify-between items-center mb-6 pb-4 border-b border-gray-100 gap-3">
             <div>
                 <h1 class="text-2xl font-extrabold text-gray-800 text-center sm:text-left">Tạo Mã QR Thanh Toán</h1>
-                <p class="text-xs font-semibold text-blue-600 tracking-wider uppercase text-center sm:text-left mt-0.5">Test Trực Tiếp Trên Máy Tính</p>
+                <p class="text-xs font-semibold text-blue-600 tracking-wider uppercase text-center sm:text-left mt-0.5">Hệ Thống Tự Động Template GitHub</p>
             </div>
             <div class="px-4 py-2.5 rounded-xl shadow-sm border border-yellow-400 flex items-center justify-center" style="background-color: #FFDE00;">
                 <img src="logo_namabank.png" alt="Nam A Bank" class="h-7 object-contain">
             </div>
-        </div>
-        
-        <!-- CHỌN FILE TEMPLATE TỪ MÁY TÍNH -->
-        <div class="mb-4 p-4 bg-amber-50 rounded-xl border border-amber-200">
-            <label class="block text-amber-900 font-bold mb-1 text-sm">📁 Chọn file Template (OP1 hoặc OP2) từ máy:</label>
-            <input type="file" id="localTemplateFile" accept="image/*" class="w-full text-sm text-gray-700 bg-white p-2 border border-amber-300 rounded-lg">
         </div>
 
         <div class="mb-4 p-4 bg-blue-50/60 rounded-xl border border-blue-100">
@@ -172,13 +166,26 @@
             ctx.fillText(text, x, y);
         }
 
-        // Logic chia dòng với kích thước chữ cố định (đồng đều mọi dòng)
+        // Logic thông minh: Phân bổ size chữ theo số lượng từ & xử lý xuống dòng tự động
         function drawWrappedText(ctx, label, text, startX, startY, maxWidth) {
             let fullText = label + " " + text;
             let words = fullText.trim().split(/\s+/);
+            let totalWords = words.length;
             
-            let currentFontSize = 65; // Cố định size chữ đồng đều cho mọi dòng
-            let currentLineSpacing = 78; // Khoảng cách dãn dòng vừa vặn
+            let currentFontSize = 65; 
+            let currentLineSpacing = 78;
+
+            // Phân bổ size theo số lượng từ
+            if (totalWords <= 5) {
+                currentFontSize = 85; 
+                currentLineSpacing = 100;
+            } else if (totalWords === 6) {
+                currentFontSize = 75; 
+                currentLineSpacing = 88;
+            } else {
+                currentFontSize = 65; 
+                currentLineSpacing = 78;
+            }
 
             ctx.font = `bold ${currentFontSize}px Arial`;
             ctx.fillStyle = "#FF0000";
@@ -339,33 +346,15 @@
             } catch (e) { alert("Lỗi khi tạo file!"); } finally { btn.disabled = false; btn.innerText = "Tạo Mã QR"; }
         }
 
-        // Đọc file template trực tiếp từ máy tính
-        function loadLocalImage(file) {
-            return new Promise((res, rej) => {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const img = new Image();
-                    img.onload = () => res(img);
-                    img.onerror = rej;
-                    img.src = e.target.result;
-                };
-                reader.onerror = rej;
-                reader.readAsDataURL(file);
-            });
-        }
-
         async function processSingleImage(selectedOption) {
-            const templateInput = document.getElementById('localTemplateFile');
-            if (templateInput.files.length === 0) {
-                alert("Vui lòng chọn file template từ máy tính trước!");
-                return;
-            }
-
             const ctk = document.getElementById('ctk').value.trim();
             const stk = document.getElementById('stk').value.trim();
             const mtk = document.getElementById('mtk').value.trim();
             if(!ctk || !stk) { alert("Nhập đủ CTK và STK!"); return; }
             
+            // Tên file template trên GitHub tương ứng với OP1 hoặc OP2 (Bạn có thể đổi tên file cho khớp thực tế trên git)
+            const templateFileName = selectedOption === 'op1' ? 'template_op1.jpg' : 'template_op2.jpg';
+
             const accountForQr = (mtk && mtk !== "0") ? mtk : stk;
             const vietqrUrl = `https://img.vietqr.io/image/${document.getElementById('bankBin').value}-${accountForQr}-compact.png?accountName=${encodeURIComponent(ctk)}`;
             const btn = document.getElementById('actionBtn');
@@ -374,7 +363,7 @@
             try {
                 const [rawQrImg, templateImg] = await Promise.all([
                     loadNetworkImage(vietqrUrl), 
-                    loadLocalImage(templateInput.files[0])
+                    loadNetworkImage(templateFileName)
                 ]);
 
                 const canvas = document.getElementById('resultCanvas');
@@ -388,7 +377,6 @@
                     [ {x: 339, y: 367, w: 1132, h: 1132}, {x: 1836, y: 369, w: 1127, h: 1126}, {x: 266, y: 2532, w: 761, h: 709}, { x: 1833, y: 2627, w: 1127, h: 1120 } ] :
                     [ {x: 339, y: 367, w: 1132, h: 1132}, {x: 1836, y: 369, w: 1127, h: 1126}, {x: 339, y: 2618, w: 1133, h: 1128}, {x: 1835, y: 2623, w: 1135, h: 1128} ];
                 
-                // Đã chỉnh lại y của ô số 1 cho OP1 lên 1650 để cân đối, và giữ chuẩn cho OP2
                 const textBoxes = selectedOption === 'op1' ? 
                     [ 
                         { x: 268, y: 1650, w: 1269, h: 338 }, 
@@ -427,7 +415,7 @@
                 document.getElementById('downloadBtn').classList.remove('hidden');
                 document.getElementById('pdfBtn').classList.remove('hidden');
             } catch (e) { 
-                alert("Lỗi xử lý file template! Hãy chắc chắn bạn đã chọn file ảnh hợp lệ."); 
+                alert("Lỗi tải template từ GitHub! Hãy kiểm tra lại tên file ảnh template trên kho lưu trữ."); 
             } finally { 
                 btn.disabled = false; 
                 btn.innerText = "Tạo Mã QR"; 
