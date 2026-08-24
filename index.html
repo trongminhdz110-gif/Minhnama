@@ -51,9 +51,7 @@
         <!-- OP1 & OP2 INPUT -->
         <div id="manualInputGroup" class="space-y-4">
             <div class="p-4 bg-amber-50 rounded-xl border border-amber-200">
-                <label class="block text-amber-900 font-bold text-sm mb-1">📤 Tải lên file Ảnh Mẫu (Template):</label>
-                <p class="text-xs text-amber-700 mb-2">Chọn file template tương ứng từ máy tính để vượt lỗi chặn bảo mật.</p>
-                <input type="file" id="templateFile" accept="image/*" class="w-full text-sm text-gray-700 bg-white p-2 border border-amber-300 rounded-lg">
+                <p class="text-xs text-amber-800 font-semibold">🌐 Ảnh mẫu (Template) sẽ được tự động tải trực tiếp từ GitHub theo tùy chọn của bạn.</p>
             </div>
 
             <div>
@@ -126,6 +124,12 @@
     </div>
 
     <script>
+        // Cấu hình link GitHub Raw chứa ảnh template của bạn
+const TEMPLATE_URLS = {
+    op1: 'https://raw.githubusercontent.com/trongminhdz110-gif/Minhnama/main/template_op1.jpg',
+    op2: 'https://raw.githubusercontent.com/trongminhdz110-gif/Minhnama/main/template_op2.jpg'
+};
+
         function toggleMode() {
             const opt = document.querySelector('input[name="optionType"]:checked').value;
             document.getElementById('manualInputGroup').classList.toggle('hidden', opt !== 'op1' && opt !== 'op2');
@@ -358,22 +362,23 @@
             const ctk = document.getElementById('ctk').value.trim();
             const stk = document.getElementById('stk').value.trim();
             const mtk = document.getElementById('mtk').value.trim();
-            const templateFileInput = document.getElementById('templateFile');
 
             if(!ctk || !stk) { alert("Nhập đủ CTK và STK!"); return; }
-            if(templateFileInput.files.length === 0) { alert("Vui lòng chọn/tải lên file Ảnh Mẫu (Template) tương ứng từ máy tính!"); return; }
+            
+            const templateUrl = TEMPLATE_URLS[selectedOption];
+            if(!templateUrl) { alert("Không tìm thấy link template GitHub cho tùy chọn này!"); return; }
             
             const accountForQr = (mtk && mtk !== "0") ? mtk : stk;
             const vietqrUrl = `https://img.vietqr.io/image/${document.getElementById('bankBin').value}-${accountForQr}-compact.png?accountName=${encodeURIComponent(ctk)}`;
             
             const btn = document.getElementById('actionBtn');
             btn.disabled = true; 
-            btn.innerText = "Đang xử lý...";
+            btn.innerText = "Đang tải template từ GitHub...";
             
             try {
                 const [rawQrImg, templateImg] = await Promise.all([
                     loadNetworkImage(vietqrUrl),
-                    loadUploadedImage(templateFileInput.files[0])
+                    loadNetworkImage(templateUrl)
                 ]);
 
                 const canvas = document.getElementById('resultCanvas');
@@ -425,7 +430,7 @@
                 document.getElementById('downloadBtn').classList.remove('hidden');
                 document.getElementById('pdfBtn').classList.remove('hidden');
             } catch (e) { 
-                alert("Lỗi xử lý: " + e.message); 
+                alert("Lỗi xử lý (có thể do link GitHub chặn CORS hoặc sai đường dẫn): " + e.message); 
             } finally { 
                 btn.disabled = false; 
                 btn.innerText = "Tạo Mã QR"; 
@@ -458,20 +463,6 @@
                 i.onerror = rej; 
                 i.src = url; 
             }); 
-        }
-
-        async function loadUploadedImage(file) {
-            return new Promise((res, rej) => {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const i = new Image();
-                    i.onload = () => res(i);
-                    i.onerror = rej;
-                    i.src = e.target.result;
-                };
-                reader.onerror = rej;
-                reader.readAsDataURL(file);
-            });
         }
 
         function cropPureQR(img) {
