@@ -50,8 +50,23 @@
 
         <!-- OP1 & OP2 INPUT -->
         <div id="manualInputGroup" class="space-y-4">
-            <div class="p-4 bg-amber-50 rounded-xl border border-amber-200">
-                <p class="text-xs text-amber-800 font-semibold">🌐 Ảnh mẫu (Template) sẽ được tự động tải trực tiếp từ GitHub kho lưu trữ <span class="font-bold">minhnama</span> của bạn.</p>
+            <div class="p-4 bg-amber-50 rounded-xl border border-amber-200 space-y-3">
+                <p class="text-xs text-amber-800 font-semibold">🌐 Ảnh mẫu (Template) tự động tải từ GitHub kho <span class="font-bold">minhnama</span>.</p>
+                
+                <!-- THANH CÔNG CỤ ĐIỀU CHỈNH CỠ CHỮ -->
+                <div class="pt-2 border-t border-amber-200/60">
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="text-xs font-bold text-amber-900">🎚️ Điều chỉnh cỡ chữ thủ công:</label>
+                        <span id="fontSizeVal" class="text-xs font-bold text-red-600 bg-white px-2 py-0.5 rounded border border-amber-300">62px</span>
+                    </div>
+                    <input type="range" id="customFontSize" min="40" max="95" value="62" step="1" 
+                           oninput="document.getElementById('fontSizeVal').innerText = this.value + 'px'" 
+                           class="w-full accent-amber-600 cursor-pointer">
+                    <div class="flex items-center mt-2">
+                        <input type="checkbox" id="autoScaleToggle" checked class="w-4 h-4 text-amber-600 rounded border-amber-300 mr-2">
+                        <label for="autoScaleToggle" class="text-xs font-medium text-amber-900 cursor-pointer">Bật chế độ thông minh (Tự động tăng size khi tên ngắn dưới 4 chữ & tự động xuống dòng khi dài)</label>
+                    </div>
+                </div>
             </div>
 
             <div>
@@ -124,7 +139,6 @@
     </div>
 
     <script>
-        // Cấu hình đường dẫn template trực tiếp từ GitHub kho minhnama
         const TEMPLATE_URLS = {
             op1: 'https://raw.githubusercontent.com/trongminhdz110-gif/Minhnama/main/template_op1.jpg',
             op2: 'https://raw.githubusercontent.com/trongminhdz110-gif/Minhnama/main/template_op2.jpg'
@@ -181,37 +195,47 @@
             ctx.textAlign = "left";
             ctx.textBaseline = "top";
 
-            let fontSize = (fullText.length <= 6) ? 72 : 62;
-            let lineSpacing = 12;
+            let wordsCount = fullText.trim().split(/\s+/).length;
+            let fontSize = parseInt(document.getElementById('customFontSize').value);
+            let isAuto = document.getElementById('autoScaleToggle').checked;
+
+            if (isAuto) {
+                if (wordsCount < 4) {
+                    fontSize = Math.max(fontSize, 78); // Dưới 4 từ: size cực to
+                } else if (wordsCount >= 4 && wordsCount <= 5) {
+                    fontSize = Math.max(fontSize, 65); // 4-5 từ: chuẩn
+                } else {
+                    fontSize = Math.min(fontSize, 52); // Tên dài tự động hạ size để xuống dòng an toàn
+                }
+            }
+
+            let lineSpacing = 10;
             let lines = [];
 
-            if (fullText.length <= 6) {
-                lines.push(fullText);
-            } else {
-                do {
-                    ctx.font = `bold ${fontSize}px Arial`;
-                    let words = fullText.trim().split(/\s+/);
-                    let currentLine = words[0];
-                    lines = [];
+            // Thuật toán gói dòng (xuống dòng tự động nếu vượt quá bề ngang maxWidth)
+            do {
+                ctx.font = `bold ${fontSize}px Arial`;
+                let words = fullText.trim().split(/\s+/);
+                let currentLine = words[0];
+                lines = [];
 
-                    for (let i = 1; i < words.length; i++) {
-                        let testLine = currentLine + " " + words[i];
-                        if (ctx.measureText(testLine).width > maxWidth) {
-                            lines.push(currentLine);
-                            currentLine = words[i];
-                        } else {
-                            currentLine = testLine;
-                        }
+                for (let i = 1; i < words.length; i++) {
+                    let testLine = currentLine + " " + words[i];
+                    if (ctx.measureText(testLine).width > maxWidth) {
+                        lines.push(currentLine);
+                        currentLine = words[i];
+                    } else {
+                        currentLine = testLine;
                     }
-                    lines.push(currentLine);
+                }
+                lines.push(currentLine);
 
-                    let maxLineWidth = Math.max(...lines.map(l => ctx.measureText(l).width));
-                    if (maxLineWidth <= maxWidth || fontSize <= 40) {
-                        break;
-                    }
-                    fontSize -= 2;
-                } while (fontSize > 40);
-            }
+                let maxLineWidth = Math.max(...lines.map(l => ctx.measureText(l).width));
+                if (maxLineWidth <= maxWidth || fontSize <= 35) {
+                    break;
+                }
+                fontSize -= 2; // Tự động co nhỏ chữ nếu vẫn bị tràn
+            } while (fontSize > 35);
 
             ctx.font = `bold ${fontSize}px Arial`;
             ctx.fillStyle = "#FF0000";
