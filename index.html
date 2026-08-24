@@ -308,7 +308,7 @@
                     drawStandardAmountQR(ctx, rawQrImg, item.name, item.stk, item.amount);
                     
                     let dataUrl = canvas.toDataURL("image/jpeg", 0.95);
-                    zip.file(`QR_${item.stk}_${item.amount || '0'}.jpg`, dataUrl.replace(/^data:image\/jpeg;base64,/, ""), {base64: true});
+                    zip.file(`${item.name}_${item.stk}_${item.amount || '0'}.jpg`, dataUrl.replace(/^data:image\/jpeg;base64,/, ""), {base64: true});
                 }
                 const content = await zip.generateAsync({type: "blob"});
                 const link = document.createElement('a'); link.href = URL.createObjectURL(content); link.download = "QR_DinhMuc_NAB.zip"; link.click();
