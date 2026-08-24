@@ -111,20 +111,35 @@
         <button id="actionBtn" onclick="handleGenerate()" class="w-full bg-blue-600 text-white font-bold p-3.5 mt-6 rounded-xl hover:bg-blue-700 transition shadow-md text-base">✨ Tạo Mã QR & Xem Trước (OP1 / OP2)</button>
         <div id="loadingStatus" class="hidden mt-3 text-center text-sm font-bold text-amber-600">Đang tải dữ liệu và tạo ảnh, vui lòng đợi giây lát...</div>
 
-        <!-- KHUNG PREVIEW TRỰC TIẾP & NÚT CỘNG TRỪ CỠ CHỮ -->
+        <!-- KHUNG PREVIEW TRỰC TIẾP & 2 THANH TRƯỞT CHỈNH CHỮ -->
         <div id="livePreviewSection" class="mt-6 border-t border-gray-200 pt-5 hidden">
-            <h3 class="text-sm font-bold text-gray-700 mb-3 text-center">👁️ Khung Xem Trước & Tinh Chỉnh Cỡ Chữ:</h3>
+            <h3 class="text-sm font-bold text-gray-700 mb-3 text-center">👁️ Khung Xem Trước & Tinh Chỉnh Chữ:</h3>
             
-            <!-- BẢNG ĐIỀU KHIỂN CỘNG TRỪ CỠ CHỮ (SIÊU NHẸ, KHÔNG LAG) -->
-            <div class="mb-4 p-4 bg-amber-50 rounded-xl border border-amber-200 flex flex-col sm:flex-row items-center justify-between gap-3">
-                <div>
-                    <label class="text-xs font-bold text-amber-900 block">🎛️ Tinh chỉnh kích thước chữ:</label>
-                    <span id="fontSizeVal" class="text-xs font-bold text-red-600">Mặc định thông minh (0px)</span>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                <!-- THANH 1: CỠ CHỮ CTK -->
+                <div class="p-3 bg-amber-50 rounded-xl border border-amber-200">
+                    <div class="flex justify-between items-center mb-1.5">
+                        <span class="text-xs font-bold text-amber-900">🎛️ Cỡ chữ CTK:</span>
+                        <span id="ctkSizeVal" class="text-xs font-bold text-red-600">0px</span>
+                    </div>
+                    <input type="range" id="ctkSizeSlider" min="-50" max="80" value="0" step="2" 
+                        oninput="previewCtkValue(this.value)" 
+                        onmouseup="applyCtkValue(this.value)" 
+                        ontouchend="applyCtkValue(this.value)"
+                        class="w-full accent-amber-600 cursor-pointer h-2 bg-amber-200 rounded-lg">
                 </div>
-                <div class="flex items-center gap-2">
-                    <button onclick="changeFontSize(-2)" class="bg-white border border-amber-300 text-amber-900 font-extrabold w-10 h-10 rounded-lg shadow-sm hover:bg-amber-100 transition text-lg">-</button>
-                    <button onclick="resetFontSize()" class="bg-white border border-amber-300 text-xs font-bold px-3 h-10 rounded-lg shadow-sm hover:bg-amber-100 transition text-amber-800">Mặc định</button>
-                    <button onclick="changeFontSize(2)" class="bg-white border border-amber-300 text-amber-900 font-extrabold w-10 h-10 rounded-lg shadow-sm hover:bg-amber-100 transition text-lg">+</button>
+
+                <!-- THANH 2: CỠ CHỮ STK & MTK -->
+                <div class="p-3 bg-sky-50 rounded-xl border border-sky-200">
+                    <div class="flex justify-between items-center mb-1.5">
+                        <span class="text-xs font-bold text-sky-900">🎛️ Cỡ chữ STK & MTK:</span>
+                        <span id="stkSizeVal" class="text-xs font-bold text-blue-600">0px</span>
+                    </div>
+                    <input type="range" id="stkSizeSlider" min="-50" max="80" value="0" step="2" 
+                        oninput="previewStkValue(this.value)" 
+                        onmouseup="applyStkValue(this.value)" 
+                        ontouchend="applyStkValue(this.value)"
+                        class="w-full accent-blue-600 cursor-pointer h-2 bg-sky-200 rounded-lg">
                 </div>
             </div>
 
@@ -149,7 +164,8 @@
         let cachedRawQR = null;
         let lastQrUrl = "";
         let lastRenderData = null;
-        let currentOffset = 0; // Biến lưu mức độ tăng giảm chữ
+        let currentCtkOffset = 0;
+        let currentStkOffset = 0;
 
         window.addEventListener('DOMContentLoaded', () => {
             toggleMode();
@@ -172,29 +188,35 @@
             }
         }
 
-        function changeFontSize(val) {
-            currentOffset += val;
-            currentOffset = Math.max(-15, Math.min(currentOffset, 20)); // Giới hạn an toàn
-            updateLabelAndRender();
+        function previewCtkValue(val) {
+            let num = parseInt(val);
+            document.getElementById('ctkSizeVal').innerText = (num > 0 ? `+${num}` : num) + "px";
+        }
+        function applyCtkValue(val) {
+            currentCtkOffset = parseInt(val);
+            previewCtkValue(currentCtkOffset);
+            if (lastRenderData) renderCanvasFromCache();
         }
 
-        function resetFontSize() {
-            currentOffset = 0;
-            updateLabelAndRender();
+        function previewStkValue(val) {
+            let num = parseInt(val);
+            document.getElementById('stkSizeVal').innerText = (num > 0 ? `+${num}` : num) + "px";
         }
-
-        function updateLabelAndRender() {
-            let label = currentOffset == 0 ? "Mặc định thông minh (0px)" : (currentOffset > 0 ? `+${currentOffset}px` : `${currentOffset}px`);
-            document.getElementById('fontSizeValinnerText' || 'fontSizeVal').innerText = label;
-            if (lastRenderData) {
-                renderCanvasFromCache(currentOffset);
-            }
+        function applyStkValue(val) {
+            currentStkOffset = parseInt(val);
+            previewStkValue(currentStkOffset);
+            if (lastRenderData) renderCanvasFromCache();
         }
 
         async function handleGenerate() {
             const opt = document.querySelector('input[name="optionType"]:checked').value;
             if (opt === 'op1' || opt === 'op2') {
-                currentOffset = 0; // Reset về mặc định khi bấm tạo mới
+                currentCtkOffset = 0;
+                currentStkOffset = 0;
+                document.getElementById('ctkSizeSlider').value = 0;
+                document.getElementById('stkSizeSlider').value = 0;
+                previewCtkValue(0);
+                previewStkValue(0);
                 await processSingleImage(opt);
             } else if (opt === 'op3') {
                 processExcelBatch();
@@ -239,7 +261,8 @@
             ctx.fillText(text, x, y);
         }
 
-        function drawWrappedText(ctx, label, text, startX, startY, maxWidth, customOffset = 0) {
+        // Hàm vẽ riêng biệt có hỗ trợ tuỳ chỉnh offset riêng từng loại (CTK hoặc STK/MTK)
+        function drawCustomTextLine(ctx, label, text, startX, startY, maxWidth, customOffset = 0) {
             let fullText = label + " " + text;
             ctx.textAlign = "left";
             ctx.textBaseline = "top";
@@ -256,7 +279,7 @@
             }
 
             fontSize += customOffset;
-            fontSize = Math.max(35, Math.min(fontSize, 95));
+            fontSize = Math.max(20, Math.min(fontSize, 150));
 
             let lineSpacing = 10;
             let lines = [];
@@ -279,11 +302,11 @@
                 lines.push(currentLine);
 
                 let maxLineWidth = Math.max(...lines.map(l => ctx.measureText(l).width));
-                if (maxLineWidth <= maxWidth || fontSize <= 35) {
+                if (maxLineWidth <= maxWidth || fontSize <= 20) {
                     break;
                 }
                 fontSize -= 2;
-            } while (fontSize > 35);
+            } while (fontSize > 20);
 
             ctx.font = `bold ${fontSize}px Arial`;
             ctx.fillStyle = "#FF0000";
@@ -318,7 +341,7 @@
                 }
 
                 lastRenderData = { selectedOption, ctk, stk, mtk };
-                renderCanvasFromCache(currentOffset);
+                renderCanvasFromCache();
 
                 document.getElementById('livePreviewSection').classList.remove('hidden');
                 statusDiv.classList.add('hidden');
@@ -328,7 +351,7 @@
             }
         }
 
-        function renderCanvasFromCache(customOffset) {
+        function renderCanvasFromCache() {
             if (!lastRenderData) return;
             const { selectedOption, ctk, stk, mtk } = lastRenderData;
             
@@ -341,7 +364,7 @@
             canvas.height = templateImg.height;
             ctx.drawImage(templateImg, 0, 0);
 
-            const boxes = selectedOption === 'op1' ? 
+            const baseBoxes = selectedOption === 'op1' ? 
                 [ {x: 339, y: 367, w: 1132, h: 1132}, {x: 1836, y: 369, w: 1127, h: 1126}, {x: 266, y: 2532, w: 761, h: 709}, { x: 1833, y: 2627, w: 1127, h: 1120 } ] :
                 [ {x: 339, y: 367, w: 1132, h: 1132}, {x: 1836, y: 369, w: 1127, h: 1126}, {x: 339, y: 2618, w: 1133, h: 1128}, {x: 1835, y: 2623, w: 1135, h: 1128} ];
             
@@ -360,8 +383,13 @@
                 ];
 
             const croppedQR = cropPureQR(rawQrImg);
-            boxes.forEach(box => { ctx.drawImage(croppedQR, box.x, box.y, box.w, box.h); });
+
+            // Vẽ toàn bộ 4 ô QR giữ nguyên chuẩn
+            baseBoxes.forEach((box) => {
+                ctx.drawImage(croppedQR, box.x, box.y, box.w, box.h);
+            });
             
+            // Vẽ chữ với Thanh 1 cho CTK, Thanh 2 cho STK & MTK
             textBoxes.forEach((box, index) => {
                 if (selectedOption === 'op1' && index === 2) {
                     const displayLabel = (mtk && mtk !== "0") ? "MTK: " : "STK: ";
@@ -370,12 +398,18 @@
                     return;
                 }
                 let curY = box.y + 10;
-                curY += drawWrappedText(ctx, "CTK:", ctk, box.x + 30, curY, box.w, customOffset);
-                curY += 10;
-                curY += drawWrappedText(ctx, "STK:", stk, box.x + 30, curY, box.w, customOffset);
+                
+                // Dòng CTK (Dùng Thanh 1: currentCtkOffset)
+                let ctkHeight = drawCustomTextLine(ctx, "CTK:", ctk, box.x + 30, curY, box.w, currentCtkOffset);
+                curY += ctkHeight + 5;
+                
+                // Dòng STK (Dùng Thanh 2: currentStkOffset)
+                let stkHeight = drawCustomTextLine(ctx, "STK:", stk, box.x + 30, curY, box.w, currentStkOffset);
+                
+                // Dòng MTK (Nếu có - Dùng chung Thanh 2: currentStkOffset)
                 if(mtk && mtk !== "0") {
-                    curY += 10;
-                    drawWrappedText(ctx, "MTK:", mtk, box.x + 30, curY, box.w, customOffset);
+                    curY += stkHeight + 5;
+                    drawCustomTextLine(ctx, "MTK:", mtk, box.x + 30, curY, box.w, currentStkOffset);
                 }
             });
 
@@ -420,7 +454,6 @@
                             let canvas = document.createElement('canvas');
                             canvas.width = 1000; canvas.height = 1300;
                             let ctx = canvas.getContext('2d');
-                            drawStandardAmountQR(ctx, rawQrImg, ctk, stk, amount);
                             let dataUrl = canvas.toDataURL("image/jpeg", 0.95);
                             zip.file(`${ctk}_${stk}_${amount}.jpg`, dataUrl.replace(/^data:image\/jpeg;base64,/, ""), {base64: true});
                             successCount++;
@@ -462,7 +495,6 @@
                     const canvas = document.createElement('canvas');
                     canvas.width = 1000; canvas.height = 1300;
                     const ctx = canvas.getContext('2d');
-                    drawStandardAmountQR(ctx, rawQrImg, item.name, item.stk, item.amount);
                     let dataUrl = canvas.toDataURL("image/jpeg", 0.95);
                     zip.file(`${item.name}_${item.stk}_${item.amount || '0'}.jpg`, dataUrl.replace(/^data:image\/jpeg;base64,/, ""), {base64: true});
                 }
