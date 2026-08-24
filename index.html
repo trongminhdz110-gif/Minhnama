@@ -116,25 +116,25 @@
             <h3 class="text-sm font-bold text-gray-700 mb-3 text-center">👁️ Khung Xem Trước & Tinh Chỉnh Chữ:</h3>
             
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-                <!-- THANH 1: CỠ CHỮ CTK -->
+                <!-- THANH 1: CỠ CHỮ CTK (Debounce ~250ms) -->
                 <div class="p-3 bg-amber-50 rounded-xl border border-amber-200">
                     <div class="flex justify-between items-center mb-1.5">
                         <span class="text-xs font-bold text-amber-900">🎛️ Cỡ chữ CTK:</span>
                         <span id="ctkSizeVal" class="text-xs font-bold text-red-600">0px</span>
                     </div>
                     <input type="range" id="ctkSizeSlider" min="-50" max="80" value="0" step="2" 
-                        oninput="onCtkSliderInput(this.value)" 
+                        oninput="handleSliderDebounce('ctk', this.value)" 
                         class="w-full accent-amber-600 cursor-pointer h-2 bg-amber-200 rounded-lg">
                 </div>
 
-                <!-- THANH 2: CỠ CHỮ STK & MTK -->
+                <!-- THANH 2: CỠ CHỮ STK & MTK (Debounce ~250ms) -->
                 <div class="p-3 bg-sky-50 rounded-xl border border-sky-200">
                     <div class="flex justify-between items-center mb-1.5">
                         <span class="text-xs font-bold text-sky-900">🎛️ Cỡ chữ STK & MTK:</span>
                         <span id="stkSizeVal" class="text-xs font-bold text-blue-600">0px</span>
                     </div>
                     <input type="range" id="stkSizeSlider" min="-50" max="80" value="0" step="2" 
-                        oninput="onStkSliderInput(this.value)" 
+                        oninput="handleSliderDebounce('stk', this.value)" 
                         class="w-full accent-blue-600 cursor-pointer h-2 bg-sky-200 rounded-lg">
                 </div>
             </div>
@@ -162,9 +162,8 @@
         let lastRenderData = null;
         let currentCtkOffset = 0;
         let currentStkOffset = 0;
-
-        // Biến lưu ảnh nền sạch (Đã gồm Template + 4 ô QR) để khi kéo thanh trượt chỉ việc bốc ra vẽ chữ đè lên, không cắt QR lại nữa
         let baseCanvasSnapshot = null; 
+        let debounceTimer = null; // Biến quản lý độ trễ thời gian (2/10s - 3/10s)
 
         window.addEventListener('DOMContentLoaded', () => {
             toggleMode();
@@ -187,20 +186,28 @@
             }
         }
 
-        // Xử lý mượt mà khi kéo thanh trượt CTK
-        function onCtkSliderInput(val) {
+        // --- CƠ CHẾ DEBOUNCE 250ms (2.5/10 GIÂY) CHO THANH TRƯỢT ---
+        function handleSliderDebounce(type, val) {
             let num = parseInt(val);
-            document.getElementById('ctkSizeVal').innerText = (num > 0 ? `+${num}` : num) + "px";
-            currentCtkOffset = num;
-            if (baseCanvasSnapshot) redrawTextOnly();
-        }
+            
+            // 1. Cập nhật con số ngay tức thì để thanh kéo mượt 100% theo ngón tay
+            if (type === 'ctk') {
+                document.getElementById('ctkSizeVal').innerText = (num > 0 ? `+${num}` : num) + "px";
+                currentCtkOffset = num;
+            } else {
+                document.getElementById('stkSizeVal').innerText = (num > 0 ? `+${num}` : num) + "px";
+                currentStkOffset = num;
+            }
 
-        // Xử lý mượt mà khi kéo thanh trượt STK & MTK
-        function onStkSliderInput(val) {
-            let num = parseInt(val);
-            document.getElementById('stkSizeVal').innerText = (num > 0 ? `+${num}` : num) + "px";
-            currentStkOffset = num;
-            if (baseCanvasSnapshot) redrawTextOnly();
+            // 2. Hủy lịch vẽ cũ đang chờ
+            clearTimeout(debounceTimer);
+
+            // 3. Hẹn lịch vẽ mới sau 250ms (~2.5/10 giây) kể từ lúc ngón tay dừng kéo
+            debounceTimer = setTimeout(() => {
+                if (baseCanvasSnapshot) {
+                    redrawTextOnly();
+                }
+            }, 250); 
         }
 
         async function handleGenerate() {
@@ -336,7 +343,6 @@
 
                 lastRenderData = { selectedOption, ctk, stk, mtk };
                 
-                // --- BƯỚC 1: TẠO ẢNH NỀN GỐC (CHỈ CHẠY 1 LẦN DUY NHẤT) ---
                 const templateImg = cachedTemplates[selectedOption];
                 const rawQrImg = cachedRawQR;
                 const tempCanvas = document.createElement('canvas');
@@ -354,10 +360,7 @@
                     tCtx.drawImage(croppedQR, box.x, box.y, box.w, box.h);
                 });
 
-                // Lưu ảnh nền sạch vào biến snapshot
                 baseCanvasSnapshot = tempCanvas;
-
-                // --- BƯỚC 2: VẼ CHỮ LẦN ĐẦU ---
                 redrawTextOnly();
 
                 document.getElementById('livePreviewSection').classList.remove('hidden');
@@ -368,7 +371,6 @@
             }
         }
 
-        // Hàm vẽ lại chữ cực kỳ nhanh gọn (Dùng khi kéo thanh trượt, tuyệt đối không đụng tới QR hay Template)
         function redrawTextOnly() {
             if (!lastRenderData || !baseCanvasSnapshot) return;
             const { selectedOption, ctk, stk, mtk } = lastRenderData;
@@ -378,7 +380,6 @@
             canvas.width = baseCanvasSnapshot.width; 
             canvas.height = baseCanvasSnapshot.height;
 
-            // Dán đè ảnh nền sạch (đã có sẵn template và QR) lên canvas
             ctx.drawImage(baseCanvasSnapshot, 0, 0);
             
             const textBoxes = selectedOption === 'op1' ? 
@@ -395,7 +396,6 @@
                     { x: 1724, y: 3914, w: 1386, h: 367 } 
                 ];
 
-            // Tiến hành in các dòng chữ đè lên
             textBoxes.forEach((box, index) => {
                 if (selectedOption === 'op1' && index === 2) {
                     const displayLabel = (mtk && mtk !== "0") ? "MTK: " : "STK: ";
