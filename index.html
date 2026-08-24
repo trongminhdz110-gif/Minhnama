@@ -186,7 +186,7 @@
             }
         }
 
-        // --- CƠ CHẾ DEBOUNCE 250ms (2.5/10 GIÂY) CHO THANH TRƯỢT ---
+        // --- CƠ CHẾ DEBOUNCE 350ms (3,5/10 GIÂY) CHO THANH TRƯỢT ---
         function handleSliderDebounce(type, val) {
             let num = parseInt(val);
             
@@ -202,12 +202,12 @@
             // 2. Hủy lịch vẽ cũ đang chờ
             clearTimeout(debounceTimer);
 
-            // 3. Hẹn lịch vẽ mới sau 250ms (~2.5/10 giây) kể từ lúc ngón tay dừng kéo
+            // 3. Hẹn lịch vẽ mới sau 350ms (~3./10 giây) kể từ lúc ngón tay dừng kéo
             debounceTimer = setTimeout(() => {
                 if (baseCanvasSnapshot) {
                     redrawTextOnly();
                 }
-            }, 250); 
+            }, 350); 
         }
 
         async function handleGenerate() {
