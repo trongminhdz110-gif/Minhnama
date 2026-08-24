@@ -333,10 +333,10 @@
                 canvas.width = templateImg.width; canvas.height = templateImg.height;
                 canvas.classList.remove('hidden'); ctx.drawImage(templateImg, 0, 0);
                 const boxes = selectedOption === 'op1' ? 
-                    [ {x: 339, y: 367, w: 1132, h: 1132}, {x: 1836, y: 369, w: 1127, h: 1126}, {x: 266, y: 2532, w: 761, h: 709} ] :
+                    [ {x: 339, y: 367, w: 1132, h: 1132}, {x: 1836, y: 369, w: 1127, h: 1126}, {x: 266, y: 2532, w: 761, h: 709}, { x: 1833, y: 2627, w: 1127, h: 1120 } ] :
                     [ {x: 339, y: 367, w: 1132, h: 1132}, {x: 1836, y: 369, w: 1127, h: 1126}, {x: 339, y: 2618, w: 1133, h: 1128}, {x: 1835, y: 2623, w: 1135, h: 1128} ];
                 const textBoxes = selectedOption === 'op1' ? 
-                    [ {x: 287, y: 1674, w: 1243, h: 348}, {x: 1765, y: 1653, w: 1286, h: 380}, {x: 214, y: 3263, w: 870, h: 174} ] :
+                    [ {x: 287, y: 1674, w: 1243, h: 348}, {x: 1765, y: 1653, w: 1286, h: 380}, {x: 214, y: 3263, w: 870, h: 174}, {x: 1771, y: 3920, w: 1286, h: 344} ] :
                     [ {x: 287, y: 1674, w: 1243, h: 348}, {x: 1765, y: 1653, w: 1286, h: 380}, {x: 272, y: 3913, w: 1280, h: 361}, {x: 1771, y: 3920, w: 1286, h: 344} ];
                 const croppedQR = cropPureQR(rawQrImg);
                 boxes.forEach(box => { ctx.drawImage(croppedQR, box.x, box.y, box.w, box.h); });
