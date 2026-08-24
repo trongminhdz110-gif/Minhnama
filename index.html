@@ -18,7 +18,7 @@
                 <p class="text-xs font-semibold text-blue-600 tracking-wider uppercase text-center sm:text-left mt-0.5">MỘT CHẠM_MỌI TRẢM NHIỆM BYE MINHNT2</p>
             </div>
             <div class="px-4 py-2.5 rounded-xl shadow-sm border border-yellow-400 flex items-center justify-center" style="background-color: #FFDE00;">
-                <img src="logo_namabank.png" alt="Nam A Bank" class="h-7 object-contain">
+                <img src="logo_namabank.png" alt="Nam A Bank" class="h-7 object-contain" onerror="this.style.display='none'">
             </div>
         </div>
 
@@ -50,6 +50,12 @@
 
         <!-- OP1 & OP2 INPUT -->
         <div id="manualInputGroup" class="space-y-4">
+            <div class="p-4 bg-amber-50 rounded-xl border border-amber-200">
+                <label class="block text-amber-900 font-bold text-sm mb-1">📤 Tải lên file Ảnh Mẫu (Template):</label>
+                <p class="text-xs text-amber-700 mb-2">Chọn file template tương ứng từ máy tính để vượt lỗi chặn bảo mật.</p>
+                <input type="file" id="templateFile" accept="image/*" class="w-full text-sm text-gray-700 bg-white p-2 border border-amber-300 rounded-lg">
+            </div>
+
             <div>
                 <label class="block text-gray-700 font-semibold mb-1">Chọn Ngân hàng:</label>
                 <select id="bankBin" class="w-full border border-gray-300 p-2.5 rounded-lg bg-white">
@@ -166,50 +172,52 @@
             ctx.fillText(text, x, y);
         }
 
-        // Logic thông minh: Phân bổ size chữ theo số lượng từ & xử lý xuống dòng tự động
         function drawWrappedText(ctx, label, text, startX, startY, maxWidth) {
             let fullText = label + " " + text;
-            let words = fullText.trim().split(/\s+/);
-            let totalWords = words.length;
-            
-            let currentFontSize = 65; 
-            let currentLineSpacing = 78;
-
-            // Phân bổ size theo số lượng từ
-            if (totalWords <= 5) {
-                currentFontSize = 85; 
-                currentLineSpacing = 100;
-            } else if (totalWords === 6) {
-                currentFontSize = 75; 
-                currentLineSpacing = 88;
-            } else {
-                currentFontSize = 65; 
-                currentLineSpacing = 78;
-            }
-
-            ctx.font = `bold ${currentFontSize}px Arial`;
-            ctx.fillStyle = "#FF0000";
             ctx.textAlign = "left";
             ctx.textBaseline = "top";
 
+            let fontSize = (fullText.length <= 6) ? 72 : 62;
+            let lineSpacing = 12;
             let lines = [];
-            let currentLine = words[0];
-            for (let i = 1; i < words.length; i++) {
-                let testLine = currentLine + " " + words[i];
-                if (ctx.measureText(testLine).width > maxWidth) {
-                    lines.push(currentLine);
-                    currentLine = words[i];
-                } else {
-                    currentLine = testLine;
-                }
-            }
-            lines.push(currentLine);
 
+            if (fullText.length <= 6) {
+                lines.push(fullText);
+            } else {
+                do {
+                    ctx.font = `bold ${fontSize}px Arial`;
+                    let words = fullText.trim().split(/\s+/);
+                    let currentLine = words[0];
+                    lines = [];
+
+                    for (let i = 1; i < words.length; i++) {
+                        let testLine = currentLine + " " + words[i];
+                        if (ctx.measureText(testLine).width > maxWidth) {
+                            lines.push(currentLine);
+                            currentLine = words[i];
+                        } else {
+                            currentLine = testLine;
+                        }
+                    }
+                    lines.push(currentLine);
+
+                    let maxLineWidth = Math.max(...lines.map(l => ctx.measureText(l).width));
+                    if (maxLineWidth <= maxWidth || fontSize <= 40) {
+                        break;
+                    }
+                    fontSize -= 2;
+                } while (fontSize > 40);
+            }
+
+            ctx.font = `bold ${fontSize}px Arial`;
+            ctx.fillStyle = "#FF0000";
+
+            let currentLineHeight = fontSize + lineSpacing;
             lines.forEach((line, index) => { 
-                ctx.fillText(line, startX, startY + (index * currentLineSpacing)); 
+                ctx.fillText(line, startX, startY + (index * currentLineHeight)); 
             });
             
-            return lines.length * currentLineSpacing;
+            return lines.length * currentLineHeight;
         }
 
         function drawStandardAmountQR(ctx, qrImg, name, stk, amount) {
@@ -350,20 +358,22 @@
             const ctk = document.getElementById('ctk').value.trim();
             const stk = document.getElementById('stk').value.trim();
             const mtk = document.getElementById('mtk').value.trim();
-            if(!ctk || !stk) { alert("Nhập đủ CTK và STK!"); return; }
-            
-            // Tên file template trên GitHub tương ứng với OP1 hoặc OP2 (Bạn có thể đổi tên file cho khớp thực tế trên git)
-            const templateFileName = selectedOption === 'op1' ? 'template_op1.jpg' : 'template_op2.jpg';
+            const templateFileInput = document.getElementById('templateFile');
 
+            if(!ctk || !stk) { alert("Nhập đủ CTK và STK!"); return; }
+            if(templateFileInput.files.length === 0) { alert("Vui lòng chọn/tải lên file Ảnh Mẫu (Template) tương ứng từ máy tính!"); return; }
+            
             const accountForQr = (mtk && mtk !== "0") ? mtk : stk;
             const vietqrUrl = `https://img.vietqr.io/image/${document.getElementById('bankBin').value}-${accountForQr}-compact.png?accountName=${encodeURIComponent(ctk)}`;
+            
             const btn = document.getElementById('actionBtn');
-            btn.disabled = true; btn.innerText = "Đang xử lý...";
+            btn.disabled = true; 
+            btn.innerText = "Đang xử lý...";
             
             try {
                 const [rawQrImg, templateImg] = await Promise.all([
-                    loadNetworkImage(vietqrUrl), 
-                    loadNetworkImage(templateFileName)
+                    loadNetworkImage(vietqrUrl),
+                    loadUploadedImage(templateFileInput.files[0])
                 ]);
 
                 const canvas = document.getElementById('resultCanvas');
@@ -415,7 +425,7 @@
                 document.getElementById('downloadBtn').classList.remove('hidden');
                 document.getElementById('pdfBtn').classList.remove('hidden');
             } catch (e) { 
-                alert("Lỗi tải template từ GitHub! Hãy kiểm tra lại tên file ảnh template trên kho lưu trữ."); 
+                alert("Lỗi xử lý: " + e.message); 
             } finally { 
                 btn.disabled = false; 
                 btn.innerText = "Tạo Mã QR"; 
@@ -448,6 +458,20 @@
                 i.onerror = rej; 
                 i.src = url; 
             }); 
+        }
+
+        async function loadUploadedImage(file) {
+            return new Promise((res, rej) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const i = new Image();
+                    i.onload = () => res(i);
+                    i.onerror = rej;
+                    i.src = e.target.result;
+                };
+                reader.onerror = rej;
+                reader.readAsDataURL(file);
+            });
         }
 
         function cropPureQR(img) {
