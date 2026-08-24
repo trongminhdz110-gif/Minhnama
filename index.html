@@ -51,7 +51,7 @@
         <!-- OP1 & OP2 INPUT -->
         <div id="manualInputGroup" class="space-y-4">
             <div class="p-4 bg-amber-50 rounded-xl border border-amber-200">
-                <p class="text-xs text-amber-800 font-semibold">🌐 Ảnh mẫu (Template) sẽ được tự động tải trực tiếp từ GitHub theo tùy chọn của bạn.</p>
+                <p class="text-xs text-amber-800 font-semibold">🌐 Ảnh mẫu (Template) sẽ được tự động tải trực tiếp từ GitHub kho lưu trữ <span class="font-bold">minhnama</span> của bạn.</p>
             </div>
 
             <div>
@@ -124,6 +124,7 @@
     </div>
 
     <script>
+        // Cấu hình đường dẫn template trực tiếp từ GitHub kho minhnama
         const TEMPLATE_URLS = {
             op1: 'https://raw.githubusercontent.com/trongminhdz110-gif/Minhnama/main/template_op1.jpg',
             op2: 'https://raw.githubusercontent.com/trongminhdz110-gif/Minhnama/main/template_op2.jpg'
@@ -163,10 +164,9 @@
             input.value = val ? Number(val).toLocaleString('vi-VN') : '';
         }
 
-        function drawFitText(ctx, text, x, y, maxWidth, maxFontSize = 55) {
-            if (!text) return;
-            let size = maxFontSize;
-            ctx.textAlign = "left";
+        function drawFitText(ctx, text, x, y, maxWidth) {
+            let size = 65;
+            ctx.textAlign = "center";
             ctx.textBaseline = "middle";
             do {
                 ctx.font = `bold ${size}px Arial`;
@@ -174,6 +174,54 @@
             } while (ctx.measureText(text).width > maxWidth && size > 20);
             ctx.fillStyle = "#FF0000";
             ctx.fillText(text, x, y);
+        }
+
+        function drawWrappedText(ctx, label, text, startX, startY, maxWidth) {
+            let fullText = label + " " + text;
+            ctx.textAlign = "left";
+            ctx.textBaseline = "top";
+
+            let fontSize = (fullText.length <= 6) ? 72 : 62;
+            let lineSpacing = 12;
+            let lines = [];
+
+            if (fullText.length <= 6) {
+                lines.push(fullText);
+            } else {
+                do {
+                    ctx.font = `bold ${fontSize}px Arial`;
+                    let words = fullText.trim().split(/\s+/);
+                    let currentLine = words[0];
+                    lines = [];
+
+                    for (let i = 1; i < words.length; i++) {
+                        let testLine = currentLine + " " + words[i];
+                        if (ctx.measureText(testLine).width > maxWidth) {
+                            lines.push(currentLine);
+                            currentLine = words[i];
+                        } else {
+                            currentLine = testLine;
+                        }
+                    }
+                    lines.push(currentLine);
+
+                    let maxLineWidth = Math.max(...lines.map(l => ctx.measureText(l).width));
+                    if (maxLineWidth <= maxWidth || fontSize <= 40) {
+                        break;
+                    }
+                    fontSize -= 2;
+                } while (fontSize > 40);
+            }
+
+            ctx.font = `bold ${fontSize}px Arial`;
+            ctx.fillStyle = "#FF0000";
+
+            let currentLineHeight = fontSize + lineSpacing;
+            lines.forEach((line, index) => { 
+                ctx.fillText(line, startX, startY + (index * currentLineHeight)); 
+            });
+            
+            return lines.length * currentLineHeight;
         }
 
         function drawStandardAmountQR(ctx, qrImg, name, stk, amount) {
@@ -318,7 +366,7 @@
             if(!ctk || !stk) { alert("Nhập đủ CTK và STK!"); return; }
             
             const templateUrl = TEMPLATE_URLS[selectedOption];
-            if(!templateUrl) { alert("Không tìm thấy link template GitHub cho tùy chọn này!"); return; }
+            if(!templateUrl) { alert("Không tìm thấy link template GitHub!"); return; }
             
             const accountForQr = (mtk && mtk !== "0") ? mtk : stk;
             const vietqrUrl = `https://img.vietqr.io/image/${document.getElementById('bankBin').value}-${accountForQr}-compact.png?accountName=${encodeURIComponent(ctk)}`;
@@ -365,27 +413,16 @@
                     if (selectedOption === 'op1' && index === 2) {
                         const displayLabel = (mtk && mtk !== "0") ? "MTK: " : "STK: ";
                         const displayVal = (mtk && mtk !== "0") ? mtk : stk;
-                        drawFitText(ctx, displayLabel + displayVal, box.x + 10, box.y + box.h/2, box.w - 20, 50);
+                        drawFitText(ctx, displayLabel + displayVal, box.x + box.w/2, box.y + box.h/2, box.w - 20);
                         return;
                     }
-                    
-                    ctx.fillStyle = "#FF0000";
-                    ctx.font = "bold 48px Arial";
-                    ctx.textBaseline = "top";
-
-                    let startX = box.x + 30;
-                    let currentY = box.y + 15;
-
-                    if (ctk) {
-                        ctx.fillText("CTK: " + ctk, startX, currentY);
-                        currentY += 65;
-                    }
-                    if (stk) {
-                        ctx.fillText("STK: " + stk, startX, currentY);
-                        currentY += 65;
-                    }
-                    if (mtk && mtk !== "0") {
-                        ctx.fillText("MTK: " + mtk, startX, currentY);
+                    let curY = box.y + 10;
+                    curY += drawWrappedText(ctx, "CTK:", ctk, box.x + 30, curY, box.w);
+                    curY += 10;
+                    curY += drawWrappedText(ctx, "STK:", stk, box.x + 30, curY, box.w);
+                    if(mtk && mtk !== "0") {
+                        curY += 10;
+                        drawWrappedText(ctx, "MTK:", mtk, box.x + 30, curY, box.w);
                     }
                 });
 
