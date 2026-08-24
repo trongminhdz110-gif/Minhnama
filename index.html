@@ -382,20 +382,18 @@
 
             ctx.drawImage(baseCanvasSnapshot, 0, 0);
             
-            const textBoxes = selectedOption === 'op1' ? 
-                [ 
-                    { x: 268, y: 1650, w: 1269, h: 338 }, 
-                    { x: 1747, y: 1674, w: 1352, h: 352 }, 
-                    { x: 214, y: 3263, w: 870, h: 174 }, 
-                    { x: 1743, y: 3917, w: 1345, h: 357 } 
-                ] :
-                [ 
-                    { x: 238, y: 1662, w: 1378, h: 375 }, 
-                    { x: 1728, y: 1666, w: 1378, h: 379 }, 
-                    { x: 223, y: 3910, w: 1385, h: 375 }, 
-                    { x: 1724, y: 3914, w: 1386, h: 367 } 
-                ];
-
+        const textBoxes = selectedOption === 'op1' ? [
+            { x: 268, y: 1650, w: 1350, h: 338 }, // Ô 1 (Trái trên)
+            { x: 1728, y: 1666, w: 1378, h: 352 }, // Ô 2 (Phải trên - đồng bộ rộng rãi)
+            { x: 214, y: 3263, w: 870, h: 174 },  // Ô 3 (Loa)
+            { x: 1724, y: 3914, w: 1386, h: 357 }  // Ô 4 (Phải dưới - đồng bộ rộng rãi)
+        ] : [
+            // --- 4 dòng x của OP2 (Phần sau dấu :) ---
+            { x: 238, y: 1662, w: 1378, h: 375 },
+            { x: 1728, y: 1666, w: 1378, h: 379 },
+            { x: 223, y: 3910, w: 1385, h: 375 },
+            { x: 1724, y: 3914, w: 1386, h: 367 }
+        ];
             textBoxes.forEach((box, index) => {
                 if (selectedOption === 'op1' && index === 2) {
                     const displayLabel = (mtk && mtk !== "0") ? "MTK: " : "STK: ";
