@@ -25,7 +25,7 @@
         <div class="mb-4 p-4 bg-blue-50/60 rounded-xl border border-blue-100">
             <label class="block text-gray-700 font-bold mb-2">Chọn loại thiết kế:</label>
             <div class="flex flex-col gap-3">
-                <div class="flex gap-6">
+                <div class="flex gap-6 flex-wrap">
                     <label class="flex items-center cursor-pointer">
                         <input type="radio" name="optionType" value="op1" checked onchange="toggleMode()" class="mr-2 w-4 h-4 text-blue-600">
                         <span class="font-medium text-blue-900">OP1: MICA & Loa</span>
@@ -33,6 +33,10 @@
                     <label class="flex items-center cursor-pointer">
                         <input type="radio" name="optionType" value="op2" onchange="toggleMode()" class="mr-2 w-4 h-4 text-blue-600">
                         <span class="font-medium text-blue-900">OP2: MICA FULL</span>
+                    </label>
+                    <label class="flex items-center cursor-pointer">
+                        <input type="radio" name="optionType" value="op5" onchange="toggleMode()" class="mr-2 w-4 h-4 text-pink-600">
+                        <span class="font-bold text-pink-700">OP5: MOMO (Dành riêng)</span>
                     </label>
                 </div>
                 <div class="flex flex-col sm:flex-row gap-3 sm:gap-6">
@@ -48,7 +52,7 @@
             </div>
         </div>
 
-        <!-- OP1 & OP2 INPUT -->
+        <!-- OP1 & OP2 & OP5 INPUT -->
         <div id="manualInputGroup" class="space-y-4">
             <div>
                 <label class="block text-gray-700 font-semibold mb-1">Chọn Ngân hàng:</label>
@@ -60,8 +64,7 @@
                     <option value="970415">VietinBank</option>
                     <option value="970418">BIDV</option>
                     <option value="970405">Agribank</option>
-                    <option
-value="970448">MOMO</option>
+                    <option value="970448">MOMO</option>
                 </select>
             </div>
             <div>
@@ -110,7 +113,7 @@ value="970448">MOMO</option>
         </div>
 
         <!-- NÚT THỰC THI CHÍNH -->
-        <button id="actionBtn" onclick="handleGenerate()" class="w-full bg-blue-600 text-white font-bold p-3.5 mt-6 rounded-xl hover:bg-blue-700 transition shadow-md text-base">✨ Tạo Mã QR & Xem Trước (OP1 / OP2)</button>
+        <button id="actionBtn" onclick="handleGenerate()" class="w-full bg-blue-600 text-white font-bold p-3.5 mt-6 rounded-xl hover:bg-blue-700 transition shadow-md text-base">✨ Tạo Mã QR & Xem Trước</button>
         <div id="loadingStatus" class="hidden mt-3 text-center text-sm font-bold text-amber-600">Đang tải dữ liệu và tạo ảnh, vui lòng đợi giây lát...</div>
 
         <!-- KHUNG PREVIEW TRỰC TIẾP & 2 THANH TRƯỞT CHỈNH CHỮ -->
@@ -118,7 +121,7 @@ value="970448">MOMO</option>
             <h3 class="text-sm font-bold text-gray-700 mb-3 text-center">👁️ Khung Xem Trước & Tinh Chỉnh Chữ:</h3>
             
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-                <!-- THANH 1: CỠ CHỮ CTK (Debounce ~250ms) -->
+                <!-- THANH 1: CỠ CHỮ CTK -->
                 <div class="p-3 bg-amber-50 rounded-xl border border-amber-200">
                     <div class="flex justify-between items-center mb-1.5">
                         <span class="text-xs font-bold text-amber-900">🎛️ Cỡ chữ CTK:</span>
@@ -129,7 +132,7 @@ value="970448">MOMO</option>
                         class="w-full accent-amber-600 cursor-pointer h-2 bg-amber-200 rounded-lg">
                 </div>
 
-                <!-- THANH 2: CỠ CHỮ STK & MTK (Debounce ~250ms) -->
+                <!-- THANH 2: CỠ CHỮ STK & MTK -->
                 <div class="p-3 bg-sky-50 rounded-xl border border-sky-200">
                     <div class="flex justify-between items-center mb-1.5">
                         <span class="text-xs font-bold text-sky-900">🎛️ Cỡ chữ STK & MTK:</span>
@@ -155,7 +158,8 @@ value="970448">MOMO</option>
     <script>
         const TEMPLATE_URLS = {
             op1: 'https://raw.githubusercontent.com/trongminhdz110-gif/Minhnama/main/template_op1.jpg',
-            op2: 'https://raw.githubusercontent.com/trongminhdz110-gif/Minhnama/main/template_op2.jpg'
+            op2: 'https://raw.githubusercontent.com/trongminhdz110-gif/Minhnama/main/template_op2.jpg',
+            op5: 'https://raw.githubusercontent.com/trongminhdz110-gif/Minhnama/main/template_op5.jpg'
         };
 
         let cachedTemplates = {};
@@ -165,7 +169,7 @@ value="970448">MOMO</option>
         let currentCtkOffset = 0;
         let currentStkOffset = 0;
         let baseCanvasSnapshot = null; 
-        let debounceTimer = null; // Biến quản lý độ trễ thời gian (2/10s - 3/10s)
+        let debounceTimer = null;
 
         window.addEventListener('DOMContentLoaded', () => {
             toggleMode();
@@ -173,14 +177,14 @@ value="970448">MOMO</option>
 
         function toggleMode() {
             const opt = document.querySelector('input[name="optionType"]:checked').value;
-            const isSingle = (opt === 'op1' || opt === 'op2');
+            const isSingle = (opt === 'op1' || opt === 'op2' || opt === 'op5');
             document.getElementById('manualInputGroup').classList.toggle('hidden', !isSingle);
             document.getElementById('excelInputGroup').classList.toggle('hidden', opt !== 'op3');
             document.getElementById('op4InputGroup').classList.toggle('hidden', opt !== 'op4');
             
             const btn = document.getElementById('actionBtn');
             if (isSingle) {
-                btn.innerText = "✨ Tạo Mã QR & Xem Trước (OP1 / OP2)";
+                btn.innerText = `✨ Tạo Mã QR & Xem Trước (${opt.toUpperCase()})`;
             } else if (opt === 'op3') {
                 btn.innerText = "📦 Xuất File Hàng Loạt (OP3 - Excel)";
             } else {
@@ -188,11 +192,8 @@ value="970448">MOMO</option>
             }
         }
 
-        // --- CƠ CHẾ DEBOUNCE 350ms (3,5/10 GIÂY) CHO THANH TRƯỢT ---
         function handleSliderDebounce(type, val) {
             let num = parseInt(val);
-            
-            // 1. Cập nhật con số ngay tức thì để thanh kéo mượt 100% theo ngón tay
             if (type === 'ctk') {
                 document.getElementById('ctkSizeVal').innerText = (num > 0 ? `+${num}` : num) + "px";
                 currentCtkOffset = num;
@@ -201,10 +202,7 @@ value="970448">MOMO</option>
                 currentStkOffset = num;
             }
 
-            // 2. Hủy lịch vẽ cũ đang chờ
             clearTimeout(debounceTimer);
-
-            // 3. Hẹn lịch vẽ mới sau 350ms (~3./10 giây) kể từ lúc ngón tay dừng kéo
             debounceTimer = setTimeout(() => {
                 if (baseCanvasSnapshot) {
                     redrawTextOnly();
@@ -214,7 +212,7 @@ value="970448">MOMO</option>
 
         async function handleGenerate() {
             const opt = document.querySelector('input[name="optionType"]:checked').value;
-            if (opt === 'op1' || opt === 'op2') {
+            if (opt === 'op1' || opt === 'op2' || opt === 'op5') {
                 currentCtkOffset = 0;
                 currentStkOffset = 0;
                 document.getElementById('ctkSizeSlider').value = 0;
@@ -353,9 +351,30 @@ value="970448">MOMO</option>
                 const tCtx = tempCanvas.getContext('2d');
                 tCtx.drawImage(templateImg, 0, 0);
 
-                const baseBoxes = selectedOption === 'op1' ? 
-                    [ {x: 339, y: 367, w: 1132, h: 1132}, {x: 1836, y: 369, w: 1127, h: 1126}, {x: 266, y: 2532, w: 761, h: 709}, { x: 1833, y: 2627, w: 1127, h: 1120 } ] :
-                    [ {x: 339, y: 367, w: 1132, h: 1132}, {x: 1836, y: 369, w: 1127, h: 1126}, {x: 339, y: 2618, w: 1133, h: 1128}, {x: 1835, y: 2623, w: 1135, h: 1128} ];
+                let baseBoxes = [];
+                if (selectedOption === 'op1') {
+                    baseBoxes = [
+                        {x: 339, y: 367, w: 1132, h: 1132}, 
+                        {x: 1836, y: 369, w: 1127, h: 1126}, 
+                        {x: 266, y: 2532, w: 761, h: 709}, 
+                        {x: 1833, y: 2627, w: 1127, h: 1120}
+                    ];
+                } else if (selectedOption === 'op2') {
+                    baseBoxes = [
+                        {x: 339, y: 367, w: 1132, h: 1132}, 
+                        {x: 1836, y: 369, w: 1127, h: 1126}, 
+                        {x: 339, y: 2618, w: 1133, h: 1128}, 
+                        {x: 1835, y: 2623, w: 1135, h: 1128}
+                    ];
+                } else if (selectedOption === 'op5') {
+                    // Tọa độ Khung QR cho OP5 (Dành riêng cho MOMO)
+                    baseBoxes = [
+                        { x: 331, y: 279, w: 1158, h: 1131 },
+                        { x: 1826, y: 279, w: 1153, h: 1132 },
+                        { x: 327, y: 2523, w: 1158, h: 1140 },
+                        { x: 1822, y: 2527, w: 1146, h: 1136 }
+                    ];
+                }
 
                 const croppedQR = cropPureQR(rawQrImg);
                 baseBoxes.forEach((box) => {
@@ -384,18 +403,31 @@ value="970448">MOMO</option>
 
             ctx.drawImage(baseCanvasSnapshot, 0, 0);
             
-        const textBoxes = selectedOption === 'op1' ? [
-            { x: 268, y: 1650, w: 1350, h: 338 }, // Ô 1 (Trái trên)
-            { x: 1728, y: 1666, w: 1378, h: 352 }, // Ô 2 (Phải trên - đồng bộ rộng rãi)
-            { x: 214, y: 3263, w: 870, h: 174 },  // Ô 3 (Loa)
-            { x: 1724, y: 3914, w: 1386, h: 357 }  // Ô 4 (Phải dưới - đồng bộ rộng rãi)
-        ] : [
-            // --- 4 dòng x của OP2 (Phần sau dấu :) ---
-            { x: 238, y: 1662, w: 1378, h: 375 },
-            { x: 1728, y: 1666, w: 1378, h: 379 },
-            { x: 223, y: 3910, w: 1385, h: 375 },
-            { x: 1724, y: 3914, w: 1386, h: 367 }
-        ];
+            let textBoxes = [];
+            if (selectedOption === 'op1') {
+                textBoxes = [
+                    { x: 268, y: 1650, w: 1350, h: 338 },
+                    { x: 1728, y: 1666, w: 1378, h: 352 },
+                    { x: 214, y: 3263, w: 870, h: 174 },
+                    { x: 1724, y: 3914, w: 1386, h: 357 }
+                ];
+            } else if (selectedOption === 'op2') {
+                textBoxes = [
+                    { x: 238, y: 1662, w: 1378, h: 375 },
+                    { x: 1728, y: 1666, w: 1378, h: 379 },
+                    { x: 223, y: 3910, w: 1385, h: 375 },
+                    { x: 1724, y: 3914, w: 1386, h: 367 }
+                ];
+            } else if (selectedOption === 'op5') {
+                // Tọa độ Text cho OP5 (Dành riêng cho MOMO) theo thứ tự khớp với khung QR
+                textBoxes = [
+                    { x: 234, y: 1709, w: 1371, h: 337 },
+                    { x: 1728, y: 1698, w: 1360, h: 356 },
+                    { x: 200, y: 3962, w: 1393, h: 338 },
+                    { x: 1691, y: 3959, w: 1393, h: 329 }
+                ];
+            }
+
             textBoxes.forEach((box, index) => {
                 if (selectedOption === 'op1' && index === 2) {
                     const displayLabel = (mtk && mtk !== "0") ? "MTK: " : "STK: ";
