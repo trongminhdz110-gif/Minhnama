@@ -92,7 +92,7 @@
                 <input type="text" id="ctk" oninput="this.value = this.value.toUpperCase();" placeholder="VD: NGUYEN VAN A" style="text-transform: uppercase;">
             </div>
             <div class="form-group">
-                <label>Số tài khoản:</label>
+                <label>Số tài khoản / SĐT:</label>
                 <input type="text" id="stk" placeholder="VD: 123456789">
             </div>
             <div class="form-group">
@@ -191,7 +191,7 @@
             
             const bankBinSelect = document.getElementById('bankBin');
             if (opt === 'op5') {
-                bankBinSelect.value = "970448";
+                bankBinSelect.value = "momo";
                 bankBinSelect.disabled = true;
             } else {
                 bankBinSelect.disabled = false;
@@ -380,7 +380,7 @@
             } catch (e) { 
                 console.error("Lỗi chi tiết khi load template:", e);
                 statusDiv.classList.add('hidden');
-                alert(`Không thể tải file ảnh "${templateUrl}". Hãy kiểm tra lại file trên GitHub đã đúng định dạng chữ thường chưa!`);
+                alert(`Không thể tải file ảnh hoặc mã QR. Hãy kiểm tra lại kết nối mạng!`);
             }
         }
 
