@@ -3,54 +3,285 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trang Tạo QR Code - Ngân Hàng & MoMo</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <title>Phần Mềm Tạo QR - Nam A Bank</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
-        body { font-family: sans-serif; text-align: center; margin: 20px; background: #f3f4f6; }
-        .container { background: #fff; padding: 20px; border-radius: 8px; display: inline-block; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 600px; width: 100%; }
-        canvas { max-width: 100%; height: auto; border: 1px solid #ccc; margin-top: 15px; }
-        .controls { margin-top: 15px; text-align: left; background: #f9fafb; padding: 15px; border-radius: 8px; border: 1px solid #e5e7eb; }
-        .form-group { margin-bottom: 12px; }
-        label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 14px; }
-        input[type="text"], select { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #d1d5db; border-radius: 4px; }
-        input[type="range"] { width: 100%; cursor: pointer; }
-        button { background: #2563eb; color: #fff; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; }
-        button:hover { background: #1d4ed8; }
+        * { box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f3f4f6; margin: 0; padding: 16px; color: #1f2937; }
+        .container { max-width: 650px; margin: 0 auto; background: #ffffff; padding: 24px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: 1px solid #e5e7eb; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid #f3f4f6; }
+        .logo-box { background: #fde047; padding: 8px 16px; border-radius: 12px; border: 1px solid #facc15; }
+        .logo-box img { height: 28px; object-fit: contain; display: block; }
+        .section-box { background: #f0f7ff; padding: 16px; border-radius: 12px; border: 1px solid #bfdbfe; margin-bottom: 16px; }
+        .form-group { margin-bottom: 14px; }
+        label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 14px; }
+        input[type="text"], select { width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; outline: none; background: #fff; }
+        input[type="text"]:focus, select:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+        .btn-primary { width: 100%; background: #2563eb; color: white; font-weight: bold; padding: 12px; border: none; border-radius: 10px; cursor: pointer; font-size: 15px; transition: background 0.2s; margin-top: 10px; }
+        .btn-primary:hover { background: #1d4ed8; }
+        .btn-secondary { width: 100%; background: white; color: #047857; border: 1px solid #a7f3d0; font-weight: 600; padding: 10px; border-radius: 10px; cursor: pointer; margin-bottom: 10px; }
+        .btn-secondary:hover { background: #ecfdf5; }
+        .hidden { display: none !important; }
+        .radio-group { display: flex; flex-direction: column; gap: 8px; }
+        .radio-row { display: flex; gap: 16px; align-items: center; }
+        canvas { max-width: 100%; height: auto; border: 1px solid #d1d5db; border-radius: 8px; background: #fff; }
+        .preview-section { margin-top: 20px; border-top: 1px solid #e5e7eb; padding-top: 16px; }
+        .slider-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+        .slider-card { padding: 10px; border-radius: 10px; border: 1px solid; }
+        .flex-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 12px; font-weight: bold; }
     </style>
 </head>
 <body>
-
     <div class="container">
-        <h2>Tạo Mã QR Thanh Toán</h2>
-        
-        <div class="controls">
-            <div class="form-group">
-                <label>Chọn loại thiết kế:</label>
-                <label><input type="radio" name="designType" value="op1" checked> OP1: MICA & Loa</label>
-                <label><input type="radio" name="designType" value="op2"> OP2: MICA FULL</label>
-                <label><input type="radio" name="designType" value="op5"> OP5: QR MoMo</label>
+        <div class="header">
+            <div>
+                <h1 style="font-size: 22px; font-weight: 800; margin: 0 0 4px 0;">Tạo Mã QR Thanh Toán</h1>
+                <p style="font-size: 11px; font-weight: bold; color: #2563eb; margin: 0; letter-spacing: 0.5px;">MỘT CHẠM_MỌI TRẢM NHIỆM BYE MINHNT2</p>
             </div>
-
-            <div class="form-group">
-                <label>Tên chủ tài khoản (CTK):</label>
-                <input type="text" id="tenChuTaiKhoan" value="NGUYEN VAN A" placeholder="Nhập tên chủ tài khoản...">
+            <div class="logo-box">
+                <img src="logo_namabank.png" alt="Nam A Bank" onerror="this.style.display='none'">
             </div>
-
-            <div class="form-group">
-                <label>Cỡ chữ CTK: <span id="sizeVal">24</span>px</label>
-                <input type="range" id="fontSizeCTK" min="16" max="60" value="24">
-            </div>
-
-            <button id="btnGenerate">Tạo Mã QR & Xem Trước</button>
         </div>
 
-        <br>
-        <canvas id="canvas"></canvas>
+        <div class="section-box">
+            <label>Chọn loại thiết kế:</label>
+            <div class="radio-group">
+                <div class="radio-row">
+                    <label style="cursor:pointer; display:flex; align-items:center; font-weight:500; color:#1e3a8a;">
+                        <input type="radio" name="optionType" value="op1" checked onchange="toggleMode()" style="margin-right:8px;"> OP1: MICA & Loa
+                    </label>
+                    <label style="cursor:pointer; display:flex; align-items:center; font-weight:500; color:#1e3a8a;">
+                        <input type="radio" name="optionType" value="op2" onchange="toggleMode()" style="margin-right:8px;"> OP2: MICA FULL
+                    </label>
+                </div>
+                <div class="radio-row">
+                    <label style="cursor:pointer; display:flex; align-items:center; font-weight:bold; color:#047857;">
+                        <input type="radio" name="optionType" value="op3" onchange="toggleMode()" style="margin-right:8px;"> OP3: QR Hàng Loạt (Excel)
+                    </label>
+                    <label style="cursor:pointer; display:flex; align-items:center; font-weight:bold; color:#7e22ce;">
+                        <input type="radio" name="optionType" value="op4" onchange="toggleMode()" style="margin-right:8px;"> OP4: QR Định Mức (Nhập tay)
+                    </label>
+                </div>
+                <div class="radio-row">
+                    <label style="cursor:pointer; display:flex; align-items:center; font-weight:bold; color:#be185d;">
+                        <input type="radio" name="optionType" value="op5" onchange="toggleMode()" style="margin-right:8px;"> OP5: QR MoMo
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- OP1 & OP2 & OP5 INPUT -->
+        <div id="manualInputGroup">
+            <div class="form-group">
+                <label>Chọn Ngân hàng:</label>
+                <select id="bankBin">
+                    <option value="970428" selected>Nam A Bank</option>
+                    <option value="970436">Vietcombank</option>
+                    <option value="970407">Techcombank</option>
+                    <option value="970422">MB Bank</option>
+                    <option value="970415">VietinBank</option>
+                    <option value="970418">BIDV</option>
+                    <option value="970405">Agribank</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Tên chủ tài khoản:</label>
+                <input type="text" id="ctk" oninput="this.value = this.value.toUpperCase();" placeholder="VD: NGUYEN VAN A" style="text-transform: uppercase;">
+            </div>
+            <div class="form-group">
+                <label>Số tài khoản:</label>
+                <input type="text" id="stk" placeholder="VD: 123456789">
+            </div>
+            <div class="form-group">
+                <label>Mã tài khoản (nhập 0 để ẩn):</label>
+                <input type="text" id="mtk" value="0">
+            </div>
+        </div>
+
+        <!-- OP3 EXCEL INPUT -->
+        <div id="excelInputGroup" class="hidden">
+            <div style="background: #ecfdf5; padding: 14px; border-radius: 10px; border: 1px solid #a7f3d0;">
+                <button onclick="downloadSampleExcel()" class="btn-secondary">📥 Tải File Excel Mẫu (Tên, STK, Số Tiền)</button>
+                <input type="file" id="excelFile" accept=".xlsx, .xls, .csv" style="width:100%; font-size:13px; background:white; padding:8px; border:1px solid #a7f3d0; border-radius:8px;">
+                <div id="excelLog" class="hidden" style="margin-top:10px; padding:8px; background:white; border:1px solid #a7f3d0; border-radius:8px; font-size:12px; font-family:monospace; max-height:120px; overflow-y:auto;"></div>
+            </div>
+        </div>
+
+        <!-- OP4 MANUAL INPUT -->
+        <div id="op4InputGroup" class="hidden">
+            <div style="background: #faf5ff; padding: 14px; border-radius: 10px; border: 1px solid #e9d5ff;">
+                <label style="color: #6b21a8; margin-bottom: 8px;">Danh sách (Ngân hàng: Nam A Bank):</label>
+                <div style="overflow-x: auto; padding-bottom: 6px;">
+                    <div id="op4RowsContainer" style="display: flex; flex-direction: column; gap: 8px; min-width: 520px;">
+                        <div style="display: grid; grid-template-columns: 2fr 1.3fr 1.3fr auto; gap: 8px; align-items: center;" class="op4-row">
+                            <input type="text" placeholder="Tên chủ tài khoản" class="op4-name" style="text-transform:uppercase;" oninput="this.value = this.value.toUpperCase()">
+                            <input type="text" placeholder="Số tài khoản" class="op4-stk">
+                            <input type="text" placeholder="Số tiền" class="op4-amount" oninput="formatCurrencyInput(this)">
+                            <button type="button" onclick="removeOp4Row(this)" style="background:none; border:none; color:#f87171; font-weight:bold; font-size:16px; cursor:pointer;">✕</button>
+                        </div>
+                    </div>
+                </div>
+                <button type="button" onclick="addOp4Row()" class="btn-secondary" style="margin-top: 10px; color:#6b21a8; border-color:#d8b4fe; background:white;">➕ Thêm dòng mới</button>
+            </div>
+        </div>
+
+        <button id="actionBtn" onclick="handleGenerate()" class="btn-primary">✨ Tạo Mã QR & Xem Trước</button>
+        <div id="loadingStatus" class="hidden" style="margin-top: 10px; text-align: center; font-size: 13px; font-weight: bold; color: #d97706;">Đang tải dữ liệu và tạo ảnh, vui lòng đợi giây lát...</div>
+
+        <!-- PREVIEW SECTION -->
+        <div id="livePreviewSection" class="preview-section hidden">
+            <h3 style="font-size: 13px; font-weight: bold; text-align: center; margin-bottom: 10px;">👁️ Khung Xem Trước & Tinh Chỉnh Chữ:</h3>
+            
+            <div class="slider-grid">
+                <div class="slider-card" style="background:#fffbeb; border-color:#fde68a;">
+                    <div class="flex-row">
+                        <span style="color:#78350f;">🎛️ Cỡ chữ CTK:</span>
+                        <span id="ctkSizeVal" style="color:#dc2626;">0px</span>
+                    </div>
+                    <input type="range" id="ctkSizeSlider" min="-50" max="80" value="0" step="2" oninput="handleSliderDebounce('ctk', this.value)" style="width:100%; cursor:pointer;">
+                </div>
+                <div class="slider-card" style="background:#f0f9ff; border-color:#bae6fd;">
+                    <div class="flex-row">
+                        <span style="color:#0369a1;">🎛️ Cỡ chữ STK & MTK:</span>
+                        <span id="stkSizeVal" style="color:#2563eb;">0px</span>
+                    </div>
+                    <input type="range" id="stkSizeSlider" min="-50" max="80" value="0" step="2" oninput="handleSliderDebounce('stk', this.value)" style="width:100%; cursor:pointer;">
+                </div>
+            </div>
+
+            <div style="text-align: center; background: #f9fafb; padding: 10px; border-radius: 10px; border: 1px solid #e5e7eb;">
+                <canvas id="resultCanvas" style="max-height: 450px; width: auto; margin: 0 auto; display: block;"></canvas>
+            </div>
+            
+            <div style="margin-top: 14px; display: flex; justify-content: center; gap: 10px;">
+                <a id="downloadBtn" class="hidden" style="background: #059669; color: white; font-weight: bold; padding: 10px 20px; border-radius: 10px; text-decoration: none; font-size: 14px;" download="bang-mica.jpg">Tải ảnh JPG gốc</a>
+                <button onclick="downloadPDF()" id="pdfBtn" class="hidden" style="background: #e11d48; color: white; font-weight: bold; padding: 10px 20px; border-radius: 10px; border: none; cursor: pointer; font-size: 14px;">Tải file PDF</button>
+            </div>
+        </div>
     </div>
 
     <script>
-        // 1. Hàm vẽ chữ tự động xuống dòng trong khung (Word Wrap)
-        function drawWrappedText(ctx, text, x, y, maxWidth, lineHeight) {
-            let words = text.split(' ');
+        const TEMPLATE_URLS = {
+            op1: './template_op1.jpg?v=' + Date.now(),
+            op2: './template_op2.jpg?v=' + Date.now(),
+            op5: './template_op5.jpg?v=' + Date.now()
+        };
+
+        let cachedTemplates = {};
+        let cachedRawQR = null;
+        let lastQrUrl = "";
+        let lastRenderData = null;
+        let currentCtkOffset = 0;
+        let currentStkOffset = 0;
+        let baseCanvasSnapshot = null; 
+        let debounceTimer = null;
+
+        window.addEventListener('DOMContentLoaded', () => { toggleMode(); });
+
+        function toggleMode() {
+            const opt = document.querySelector('input[name="optionType"]:checked').value;
+            const isSingle = (opt === 'op1' || opt === 'op2' || opt === 'op5');
+            
+            document.getElementById('manualInputGroup').classList.toggle('hidden', !isSingle);
+            document.getElementById('excelInputGroup').classList.toggle('hidden', opt !== 'op3');
+            document.getElementById('op4InputGroup').classList.toggle('hidden', opt !== 'op4');
+            
+            const bankBinSelect = document.getElementById('bankBin');
+            if (opt === 'op5') {
+                bankBinSelect.value = "970448";
+                bankBinSelect.disabled = true;
+            } else {
+                bankBinSelect.disabled = false;
+            }
+
+            const btn = document.getElementById('actionBtn');
+            if (opt === 'op5') btn.innerText = "✨ Tạo Mã QR & Xem Trước (OP5 - MoMo)";
+            else if (opt === 'op1') btn.innerText = "✨ Tạo Mã QR & Xem Trước (OP1 - MICA & Loa)";
+            else if (opt === 'op2') btn.innerText = "✨ Tạo Mã QR & Xem Trước (OP2 - MICA FULL)";
+            else if (opt === 'op3') btn.innerText = "📦 Xuất File Hàng Loạt (OP3 - Excel)";
+            else btn.innerText = "📦 Xuất File Định Mức (OP4 - Nhập Tay)";
+        }
+
+        function handleSliderDebounce(type, val) {
+            let num = parseInt(val);
+            if (type === 'ctk') {
+                document.getElementById('ctkSizeVal').innerText = (num > 0 ? `+${num}` : num) + "px";
+                currentCtkOffset = num;
+            } else {
+                document.getElementById('stkSizeVal').innerText = (num > 0 ? `+${num}` : num) + "px";
+                currentStkOffset = num;
+            }
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => { if (baseCanvasSnapshot) redrawTextOnly(); }, 350); 
+        }
+
+        async function handleGenerate() {
+            const opt = document.querySelector('input[name="optionType"]:checked').value;
+            if (opt === 'op1' || opt === 'op2' || opt === 'op5') {
+                currentCtkOffset = 0; currentStkOffset = 0;
+                document.getElementById('ctkSizeSlider').value = 0;
+                document.getElementById('stkSizeSlider').value = 0;
+                document.getElementById('ctkSizeVal').innerText = "0px";
+                document.getElementById('stkSizeVal').innerText = "0px";
+                await processSingleImage(opt);
+            } else if (opt === 'op3') { processExcelBatch(); }
+            else if (opt === 'op4') { processOp4(); }
+        }
+
+        function addOp4Row(nameVal = '', stkVal = '', amountVal = '') {
+            const container = document.getElementById('op4RowsContainer');
+            const div = document.createElement('div');
+            div.className = "op4-row";
+            div.style = "display: grid; grid-template-columns: 2fr 1.3fr 1.3fr auto; gap: 8px; align-items: center;";
+            div.innerHTML = `
+                <input type="text" placeholder="Tên chủ tài khoản" value="${nameVal}" class="op4-name" style="text-transform:uppercase;" oninput="this.value = this.value.toUpperCase()">
+                <input type="text" placeholder="Số tài khoản" value="${stkVal}" class="op4-stk">
+                <input type="text" placeholder="Số tiền" value="${amountVal}" class="op4-amount" oninput="formatCurrencyInput(this)">
+                <button type="button" onclick="removeOp4Row(this)" style="background:none; border:none; color:#f87171; font-weight:bold; font-size:16px; cursor:pointer;">✕</button>
+            `;
+            container.appendChild(div);
+        }
+
+        function removeOp4Row(btn) {
+            const rows = document.querySelectorAll('.op4-row');
+            if (rows.length > 1) { btn.closest('.op4-row').remove(); }
+            else { alert("Cần giữ lại ít nhất một dòng!"); }
+        }
+
+        function formatCurrencyInput(input) {
+            let val = input.value.replace(/\D/g, '');
+            input.value = val ? Number(val).toLocaleString('vi-VN') : '';
+        }
+
+        function drawFitText(ctx, text, x, y, maxWidth) {
+            let size = 65;
+            ctx.textAlign = "center"; ctx.textBaseline = "middle";
+            do { ctx.font = `bold ${size}px Arial`; size -= 2; } while (ctx.measureText(text).width > maxWidth && size > 20);
+            ctx.fillStyle = "#FF0000"; ctx.fillText(text, x, y);
+        }
+
+        // ==========================================
+        // HÀM TỰ ĐỘNG XUỐNG DÒNG (WORD WRAP) CHO CTK
+        // ==========================================
+        function drawWrappedCustomTextLine(ctx, label, text, startX, startY, maxWidth, customOffset = 0, isBoldValue = true, textColor = "#FF0000") {
+            ctx.textBaseline = "top";
+            let fontSize = 62;
+            let combinedLength = (label + " " + text).length;
+            if (combinedLength < 20) fontSize = 78;
+            else if (combinedLength <= 35) fontSize = 65;
+            else fontSize = 52;
+            fontSize += customOffset;
+            fontSize = Math.max(20, Math.min(fontSize, 150));
+            
+            let lineHeight = fontSize * 1.25;
+            ctx.font = `${fontSize}px Arial`;
+            
+            // Xử lý tách từ để tự động xuống dòng nếu vượt quá chiều rộng khung (maxWidth)
+            let fullText = label + " " + text;
+            let words = fullText.split(' ');
             let line = '';
             let lines = [];
 
@@ -66,87 +297,252 @@
             }
             lines.push(line);
 
+            ctx.textAlign = "left";
+            ctx.fillStyle = textColor;
+
             for (let k = 0; k < lines.length; k++) {
-                ctx.fillText(lines[k], x, y + (k * lineHeight));
+                ctx.fillText(lines[k], startX, startY + (k * lineHeight));
+            }
+
+            // Trả về tổng chiều cao khối text đã vẽ để dòng tiếp theo (STK) dịch xuống hợp lý
+            return (lines.length * lineHeight) + 10;
+        }
+
+        function drawStandardLine(ctx, label, text, startX, startY, customOffset = 0, isBoldValue = true, textColor = "#FF0000") {
+            ctx.textBaseline = "top";
+            let fontSize = 62 + customOffset;
+            fontSize = Math.max(20, Math.min(fontSize, 150));
+            ctx.textAlign = "left";
+            ctx.font = `${fontSize}px Arial`;
+            ctx.fillStyle = textColor;
+            ctx.fillText(label, startX, startY);
+            let labelWidth = ctx.measureText(label + " ").width;
+            ctx.font = (isBoldValue ? "bold " : "") + `${fontSize}px Arial`;
+            ctx.fillText(text, startX + labelWidth, startY);
+            return fontSize + 10;
+        }
+
+        async function processSingleImage(selectedOption) {
+            const ctk = document.getElementById('ctk').value.trim() || "NGUYEN VAN A";
+            const stk = document.getElementById('stk').value.trim() || "123456789";
+            const mtk = document.getElementById('mtk').value.trim();
+            const statusDiv = document.getElementById('loadingStatus');
+            statusDiv.classList.remove('hidden');
+
+            const templateUrl = TEMPLATE_URLS[selectedOption];
+            const accountForQr = (mtk && mtk !== "0") ? mtk : stk;
+            
+            let vietqrUrl = "";
+            if (selectedOption === 'op5') {
+                vietqrUrl = `https://img.vietqr.io/image/momo-${accountForQr}-compact.png?accountName=${encodeURIComponent(ctk)}`;
+            } else {
+                vietqrUrl = `https://img.vietqr.io/image/${document.getElementById('bankBin').value}-${accountForQr}-compact.png?accountName=${encodeURIComponent(ctk)}`;
+            }
+            
+            try {
+                if (!cachedTemplates[selectedOption]) {
+                    cachedTemplates[selectedOption] = await loadNetworkImage(templateUrl);
+                }
+                if (lastQrUrl !== vietqrUrl) {
+                    cachedRawQR = await loadNetworkImage(vietqrUrl);
+                    lastQrUrl = vietqrUrl;
+                }
+
+                lastRenderData = { selectedOption, ctk, stk, mtk };
+                const templateImg = cachedTemplates[selectedOption];
+                const rawQrImg = cachedRawQR;
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = templateImg.width; tempCanvas.height = templateImg.height;
+                const tCtx = tempCanvas.getContext('2d');
+                tCtx.drawImage(templateImg, 0, 0);
+
+                let baseBoxes = [];
+                if (selectedOption === 'op1') {
+                    baseBoxes = [
+                        { x: 339, y: 367, w: 1132, h: 1132 }, { x: 1836, y: 369, w: 1127, h: 1126 }, 
+                        { x: 266, y: 2532, w: 761, h: 709 }, { x: 1833, y: 2627, w: 1127, h: 1120 }
+                    ];
+                } else if (selectedOption === 'op2') {
+                    baseBoxes = [
+                        { x: 339, y: 367, w: 1132, h: 1132 }, { x: 1836, y: 369, w: 1127, h: 1126 }, 
+                        { x: 339, y: 2618, w: 1133, h: 1128 }, { x: 1835, y: 2623, w: 1135, h: 1128 }
+                    ];
+                } else if (selectedOption === 'op5') {
+                    baseBoxes = [
+                        { x: 337, y: 277, w: 1142, h: 1134 }, { x: 1826, y: 281, w: 1150, h: 1130 }, 
+                        { x: 329, y: 2527, w: 1142, h: 1134 }, { x: 1826, y: 2531, w: 1150, h: 1126 }
+                    ];
+                }
+
+                const croppedQR = cropPureQR(rawQrImg);
+                baseBoxes.forEach(box => tCtx.drawImage(croppedQR, box.x, box.y, box.w, box.h));
+
+                baseCanvasSnapshot = tempCanvas;
+                redrawTextOnly();
+
+                document.getElementById('livePreviewSection').classList.remove('hidden');
+                statusDiv.classList.add('hidden');
+            } catch (e) { 
+                console.error("Lỗi chi tiết khi load template:", e);
+                statusDiv.classList.add('hidden');
+                alert(`Không thể tải file ảnh "${templateUrl}". Vui lòng kiểm tra lại kết nối mạng hoặc thử làm mới (Ctrl + F5) trang web!`);
             }
         }
 
-        // 2. Đường dẫn template (Sử dụng đường dẫn tuyệt đối GitHub Pages hoặc tương đối sạch)
-        const TEMPLATE_URLS = {
-            op1: './template_op1.jpg?v=' + Date.now(),
-            op2: './template_op2.jpg?v=' + Date.now(),
-            op5: './template_op5.jpg?v=' + Date.now()
-        };
+        function redrawTextOnly() {
+            if (!lastRenderData || !baseCanvasSnapshot) return;
+            const { selectedOption, ctk, stk, mtk } = lastRenderData;
+            const canvas = document.getElementById('resultCanvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = baseCanvasSnapshot.width; canvas.height = baseCanvasSnapshot.height;
+            ctx.drawImage(baseCanvasSnapshot, 0, 0);
+            
+            let textBoxes = [];
+            if (selectedOption === 'op1') {
+                textBoxes = [
+                    { x: 268, y: 1650, w: 1350, h: 338 }, { x: 1728, y: 1666, w: 1378, h: 352 }, 
+                    { x: 214, y: 3263, w: 870, h: 174 }, { x: 1724, y: 3914, w: 1386, h: 357 }
+                ];
+            } else if (selectedOption === 'op2') {
+                textBoxes = [
+                    { x: 238, y: 1662, w: 1378, h: 375 }, { x: 1728, y: 1666, w: 1378, h: 379 }, 
+                    { x: 223, y: 3910, w: 1385, h: 375 }, { x: 1724, y: 3914, w: 1386, h: 367 }
+                ];
+            } else if (selectedOption === 'op5') {
+                // ==========================================
+                // TỌA ĐỘ VÀ CẤU HÌNH RIÊNG BIỆT CHO OP5 (MOMO)
+                // ==========================================
+                textBoxes = [
+                    { x: 215, y: 1711, w: 1390, h: 340 }, { x: 1727, y: 1717, w: 1363, h: 317 }, 
+                    { x: 219, y: 3968, w: 1374, h: 325 }, { x: 1719, y: 3954, w: 1371, h: 336 }
+                ];
+            }
 
-        const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d');
-        const btnGenerate = document.getElementById('btnGenerate');
-        const fontSizeCTK = document.getElementById('fontSizeCTK');
-        const sizeVal = document.getElementById('sizeVal');
+            // Xác định màu chữ riêng: OP5 dùng màu đen/hồng đặc trưng, OP1/OP2 dùng màu đỏ
+            let textColor = (selectedOption === 'op5') ? "#000000" : "#FF0000";
 
-        fontSizeCTK.addEventListener('input', function() {
-            sizeVal.innerText = this.value;
-            renderQRCodeImage();
-        });
-
-        btnGenerate.addEventListener('click', renderQRCodeImage);
-
-        // Tự động render lần đầu khi vào trang
-        window.onload = function() {
-            renderQRCodeImage();
-        };
-
-        function renderQRCodeImage() {
-            let designTypeElement = document.querySelector('input[name="designType"]:checked');
-            let designType = designTypeElement ? designTypeElement.value : 'op1';
-
-            let targetUrl = TEMPLATE_URLS.op1;
-            if (designType === 'op2') targetUrl = TEMPLATE_URLS.op2;
-            if (designType === 'op5') targetUrl = TEMPLATE_URLS.op5;
-
-            let img = new Image();
-            img.crossOrigin = "anonymous"; // Tránh lỗi CORS trên GitHub Pages
-
-            img.onload = function() {
-                canvas.width = img.width;
-                canvas.height = img.height;
-                ctx.drawImage(img, 0, 0);
-
-                let ctkSize = parseInt(fontSizeCTK.value) || 24;
-                let tenChuTaiKhoan = document.getElementById('tenChuTaiKhoan').value.toUpperCase() || "NGUYEN VAN A";
-
-                ctx.font = `bold ${ctkSize}px sans-serif`;
-
-                // Phân tách tọa độ, màu sắc và giới hạn khung (maxWidth) riêng biệt cho từng OP
-                if (designType === 'op5') {
-                    // === CẤU HÌNH RIÊNG CHO OP5 (MoMo) ===
-                    ctx.fillStyle = "#000000"; 
-                    let textMoMo = "CTK: " + tenChuTaiKhoan;
-                    
-                    let x_op5 = 150;          // Tọa độ X của OP5
-                    let y_op5 = 820;          // Tọa độ Y của OP5
-                    let maxWidth_op5 = 400;   // Ngưỡng tự xuống dòng của OP5
-                    
-                    drawWrappedText(ctx, textMoMo, x_op5, y_op5, maxWidth_op5, ctkSize * 1.2);
-
-                } else {
-                    // === CẤU HÌNH CHO OP1 & OP2 (VietQR) ===
-                    ctx.fillStyle = "#cc0000"; 
-                    let textVietQR = "CTK: " + tenChuTaiKhoan;
-                    
-                    let x_vietqr = 120;       // Tọa độ X của OP1/OP2
-                    let y_vietqr = 750;       // Tọa độ Y của OP1/OP2
-                    let maxWidth_vietqr = 350; // Ngưỡng tự xuống dòng của OP1/OP2
-                    
-                    drawWrappedText(ctx, textVietQR, x_vietqr, y_vietqr, maxWidth_vietqr, ctkSize * 1.2);
+            textBoxes.forEach((box, index) => {
+                if (selectedOption === 'op1' && index === 2) {
+                    const displayLabel = (mtk && mtk !== "0") ? "MTK: " : "STK: ";
+                    const displayVal = (mtk && mtk !== "0") ? mtk : stk;
+                    drawFitText(ctx, displayLabel + displayVal, box.x + box.w/2, box.y + box.h/2, box.w - 20);
+                    return;
                 }
-            };
+                let curY = box.y + 10;
+                
+                // Vẽ CTK có tự động xuống dòng (Word Wrap) dựa theo maxWidth của từng box
+                let ctkH = drawWrappedCustomTextLine(ctx, "CTK:", ctk, box.x + 30, curY, box.w - 40, currentCtkOffset, true, textColor);
+                curY += ctkH + 5;
+                
+                // Vẽ STK
+                let stkH = drawStandardLine(ctx, "STK:", stk, box.x + 30, curY, currentStkOffset, true, textColor);
+                
+                // Vẽ MTK nếu có
+                if(mtk && mtk !== "0") {
+                    curY += stkH + 5;
+                    drawStandardLine(ctx, "MTK:", mtk, box.x + 30, curY, currentStkOffset, true, textColor);
+                }
+            });
 
-            img.onerror = function() {
-                alert("Không thể tải file ảnh template từ GitHub. Vui lòng kiểm tra lại tên file hoặc kết nối mạng!");
-            };
+            document.getElementById('downloadBtn').href = canvas.toDataURL("image/jpeg", 0.95);
+            document.getElementById('downloadBtn').classList.remove('hidden');
+            document.getElementById('pdfBtn').classList.remove('hidden');
+        }
 
-            img.src = targetUrl;
+        async function processExcelBatch() {
+            const fileInput = document.getElementById('excelFile');
+            const logDiv = document.getElementById('excelLog');
+            if(fileInput.files.length === 0) { alert("Vui lòng chọn file Excel!"); return; }
+            logDiv.classList.remove('hidden'); logDiv.innerText = "Đang đọc file Excel...";
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, {type: 'array'});
+                    const rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {header: 1});
+                    if(rows.length <= 1) { logDiv.innerText = "File Excel không có dữ liệu!"; return; }
+                    const zip = new JSZip(); let successCount = 0;
+                    for(let i = 1; i < rows.length; i++) {
+                        let r = rows[i]; if(!r || r.length === 0) continue;
+                        let ctk = String(r[0] || '').trim().toUpperCase();
+                        let stk = String(r[1] || '').trim();
+                        let amount = r[2] ? String(r[2]).replace(/\D/g, '') : '';
+                        let typeOpt = document.querySelector('input[name="optionType"]:checked').value;
+                        if(!ctk || !stk) continue;
+                        let vietqrUrl = `https://img.vietqr.io/image/970428-${stk}-compact.png?accountName=${encodeURIComponent(ctk)}${amount ? '&amount='+amount : ''}`;
+                        try {
+                            let rawQrImg = await loadNetworkImage(vietqrUrl);
+                            let canvas = document.createElement('canvas'); canvas.width = 1000; canvas.height = 1300;
+                            let dataUrl = canvas.toDataURL("image/jpeg", 0.95);
+                            zip.file(`${ctk}_${stk}_${amount}.jpg`, dataUrl.replace(/^data:image\/jpeg;base64,/, ""), {base64: true});
+                            successCount++;
+                        } catch(err) {}
+                    }
+                    if(successCount > 0) {
+                        const content = await zip.generateAsync({type: "blob"});
+                        const link = document.createElement('a'); link.href = URL.createObjectURL(content); link.download = "QR_HangLoat_NAB.zip"; link.click();
+                        logDiv.innerText = `✅ Đã xuất thành công ${successCount} mã QR!`;
+                    }
+                } catch(err) { logDiv.innerText = "Lỗi đọc file: " + err.message; }
+            };
+            reader.readAsArrayBuffer(fileInput.files[0]);
+        }
+
+        async function processOp4() {
+            const rows = document.querySelectorAll('.op4-row');
+            let dataList = [];
+            rows.forEach(row => {
+                const name = row.querySelector('.op4-name').value.trim();
+                const stk = row.querySelector('.op4-stk').value.trim();
+                const amountClean = row.querySelector('.op4-amount').value.replace(/\D/g, '');
+                if (name && stk) dataList.push({ name, stk, amount: amountClean });
+            });
+            if (dataList.length === 0) return alert("Vui lòng nhập đủ Tên và STK!");
+            try {
+                const zip = new JSZip();
+                for (let i = 0; i < dataList.length; i++) {
+                    const item = dataList[i];
+                    let vietqrUrl = `https://img.vietqr.io/image/970428-${item.stk}-compact.png?accountName=${encodeURIComponent(item.name)}${item.amount ? '&amount='+item.amount : ''}`;
+                    const rawQrImg = await loadNetworkImage(vietqrUrl);
+                    const canvas = document.createElement('canvas'); canvas.width = 1000; canvas.height = 1300;
+                    let dataUrl = canvas.toDataURL("image/jpeg", 0.95);
+                    zip.file(`${item.name}_${item.stk}_${item.amount || '0'}.jpg`, dataUrl.replace(/^data:image\/jpeg;base64,/, ""), {base64: true});
+                }
+                const content = await zip.generateAsync({type: "blob"});
+                const link = document.createElement('a'); link.href = URL.createObjectURL(content); link.download = "QR_DinhMuc_NAB.zip"; link.click();
+            } catch (e) { alert("Lỗi khi tạo file!"); }
+        }
+
+        function downloadSampleExcel() {
+            const ws = XLSX.utils.json_to_sheet([{ "Tên Chủ Tài Khoản": "NGUYEN VAN A", "Số Tài Khoản": "123456789", "Số Tiền": "50000" }]);
+            const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "DanhSach");
+            XLSX.writeFile(wb, "mau_qr_hang_loat_nab.xlsx");
+        }
+
+        async function loadNetworkImage(url) {
+            return new Promise((res, rej) => {
+                const i = new Image();
+                i.crossOrigin = "anonymous";
+                i.onload = () => res(i);
+                i.onerror = (err) => rej(err);
+                i.src = url;
+            });
+        }
+
+        function cropPureQR(img) {
+            const size = Math.min(img.width, img.height) * 0.72;
+            const c = document.createElement('canvas'); const ctx = c.getContext('2d');
+            c.width = c.height = size;
+            ctx.drawImage(img, (img.width-size)/2, img.height*0.14, size, size, 0, 0, size, size);
+            return c;
+        }
+
+        function downloadPDF() {
+            const canvas = document.getElementById('resultCanvas');
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: [190, 190 * (canvas.height / canvas.width)] });
+            pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, 190, 190 * (canvas.height / canvas.width));
+            pdf.save('bang-mica.pdf');
         }
     </script>
 </body>
