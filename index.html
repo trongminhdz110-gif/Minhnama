@@ -5,12 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <title>Phần Mềm Tạo QR - Nam A Bank</title>
-    <!-- ĐÃ XÓA HOÀN TOÀN SCRIPT TAILWIND CDN ĐỂ TRÁNH LỖI MẠNG -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
-        /* CSS thuần nội bộ bảo đảm hiển thị 100% ổn định không cần internet bên ngoài */
         * { box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f3f4f6; margin: 0; padding: 16px; color: #1f2937; }
         .container { max-width: 650px; margin: 0 auto; background: #ffffff; padding: 24px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: 1px solid #e5e7eb; }
@@ -87,7 +85,6 @@
                     <option value="970415">VietinBank</option>
                     <option value="970418">BIDV</option>
                     <option value="970405">Agribank</option>
-                    <option value="970448">MoMo</option>
                 </select>
             </div>
             <div class="form-group">
@@ -108,7 +105,7 @@
         <div id="excelInputGroup" class="hidden">
             <div style="background: #ecfdf5; padding: 14px; border-radius: 10px; border: 1px solid #a7f3d0;">
                 <button onclick="downloadSampleExcel()" class="btn-secondary">📥 Tải File Excel Mẫu (Tên, STK, Số Tiền)</button>
-                <input type="file" id="excelFile" accept=".xlsx, .xls, .csv" style="width:1g; font-size:13px; background:white; padding:8px; border:1px solid #a7f3d0; border-radius:8px;">
+                <input type="file" id="excelFile" accept=".xlsx, .xls, .csv" style="width:100%; font-size:13px; background:white; padding:8px; border:1px solid #a7f3d0; border-radius:8px;">
                 <div id="excelLog" class="hidden" style="margin-top:10px; padding:8px; background:white; border:1px solid #a7f3d0; border-radius:8px; font-size:12px; font-family:monospace; max-height:120px; overflow-y:auto;"></div>
             </div>
         </div>
@@ -313,9 +310,23 @@
                 const tCtx = tempCanvas.getContext('2d');
                 tCtx.drawImage(templateImg, 0, 0);
 
-                const baseBoxes = selectedOption === 'op1' || selectedOption === 'op5' ? 
-                    [ {x: 339, y: 367, w: 1132, h: 1132}, {x: 1836, y: 369, w: 1127, h: 1126}, {x: 266, y: 2532, w: 761, h: 709}, { x: 1833, y: 2627, w: 1127, h: 1120 } ] :
-                    [ {x: 339, y: 367, w: 1132, h: 1132}, {x: 1836, y: 369, w: 1127, h: 1126}, {x: 339, y: 2618, w: 1133, h: 1128}, {x: 1835, y: 2623, w: 1135, h: 1128} ];
+                let baseBoxes = [];
+                if (selectedOption === 'op1') {
+                    baseBoxes = [
+                        { x: 339, y: 367, w: 1132, h: 1132 }, { x: 1836, y: 369, w: 1127, h: 1126 }, 
+                        { x: 266, y: 2532, w: 761, h: 709 }, { x: 1833, y: 2627, w: 1127, h: 1120 }
+                    ];
+                } else if (selectedOption === 'op5') {
+                    baseBoxes = [
+                        { x: 339, y: 367, w: 1132, h: 1132 }, { x: 1836, y: 369, w: 1127, h: 1126 }, 
+                        { x: 266, y: 2532, w: 761, h: 709 }, { x: 1833, y: 2627, w: 1127, h: 1120 }
+                    ];
+                } else {
+                    baseBoxes = [
+                        { x: 339, y: 367, w: 1132, h: 1132 }, { x: 1836, y: 369, w: 1127, h: 1126 }, 
+                        { x: 339, y: 2618, w: 1133, h: 1128 }, { x: 1835, y: 2623, w: 1135, h: 1128 }
+                    ];
+                }
 
                 const croppedQR = cropPureQR(rawQrImg);
                 baseBoxes.forEach(box => tCtx.drawImage(croppedQR, box.x, box.y, box.w, box.h));
@@ -339,16 +350,27 @@
             canvas.width = baseCanvasSnapshot.width; canvas.height = baseCanvasSnapshot.height;
             ctx.drawImage(baseCanvasSnapshot, 0, 0);
             
-            const textBoxes = (selectedOption === 'op1' || selectedOption === 'op5') ? [
-                { x: 268, y: 1650, w: 1350, h: 338 }, { x: 1728, y: 1666, w: 1378, h: 352 }, 
-                { x: 214, y: 3263, w: 870, h: 174 }, { x: 1724, y: 3914, w: 1386, h: 357 }  
-            ] : [
-                { x: 238, y: 1662, w: 1378, h: 375 }, { x: 1728, y: 1666, w: 1378, h: 379 },
-                { x: 223, y: 3910, w: 1385, h: 375 }, { x: 1724, y: 3914, w: 1386, h: 367 }
-            ];
+            let textBoxes = [];
+            if (selectedOption === 'op1') {
+                textBoxes = [
+                    { x: 268, y: 1650, w: 1350, h: 338 }, { x: 1728, y: 1666, w: 1378, h: 352 }, 
+                    { x: 214, y: 3263, w: 870, h: 174 }, { x: 1724, y: 3914, w: 1386, h: 357 }
+                ];
+            } else if (selectedOption === 'op5') {
+                textBoxes = [
+                    { x: 268, y: 1650, w: 1350, h: 338 }, { x: 1728, y: 1666, w: 1378, h: 352 }, 
+                    { x: 214, y: 3263, w: 870, h: 174 }, { x: 1724, y: 3914, w: 1386, h: 357 }
+                ];
+            } else {
+                textBoxes = [
+                    { x: 238, y: 1662, w: 1378, h: 375 }, { x: 1728, y: 1666, w: 1378, h: 379 }, 
+                    { x: 223, y: 3910, w: 1385, h: 375 }, { x: 1724, y: 3914, w: 1386, h: 367 }
+                ];
+            }
 
             textBoxes.forEach((box, index) => {
-                if ((selectedOption === 'op1' || selectedOption === 'op5') && index === 2) {
+                // Chỉ riêng OP1 mới thu gọn ô số 3, còn OP2 và OP5 hiển thị đủ 4 ô đầy đủ
+                if (selectedOption === 'op1' && index === 2) {
                     const displayLabel = (mtk && mtk !== "0") ? "MTK: " : "STK: ";
                     const displayVal = (mtk && mtk !== "0") ? mtk : stk;
                     drawFitText(ctx, displayLabel + displayVal, box.x + box.w/2, box.y + box.h/2, box.w - 20);
