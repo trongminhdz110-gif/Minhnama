@@ -165,9 +165,9 @@
 
     <script>
         const TEMPLATE_URLS = {
-            op1: './template_op1.jpg?v=' + Date.now(),
-            op2: './template_op2.jpg?v=' + Date.now(),
-            op5: './template_op5.jpg?v=' + Date.now()
+            op1: 'template_op1.jpg?v=' + Date.now(),
+            op2: 'template_op2.jpg?v=' + Date.now(),
+            op5: 'template_op5.jpg?v=' + Date.now()
         };
 
         let cachedTemplates = {};
@@ -263,9 +263,6 @@
             ctx.fillStyle = "#FF0000"; ctx.fillText(text, x, y);
         }
 
-        // ==========================================
-        // HÀM TỰ ĐỘNG XUỐNG DÒNG (WORD WRAP) CHO CTK
-        // ==========================================
         function drawWrappedCustomTextLine(ctx, label, text, startX, startY, maxWidth, customOffset = 0, isBoldValue = true, textColor = "#FF0000") {
             ctx.textBaseline = "top";
             let fontSize = 62;
@@ -279,7 +276,6 @@
             let lineHeight = fontSize * 1.25;
             ctx.font = `${fontSize}px Arial`;
             
-            // Xử lý tách từ để tự động xuống dòng nếu vượt quá chiều rộng khung (maxWidth)
             let fullText = label + " " + text;
             let words = fullText.split(' ');
             let line = '';
@@ -304,7 +300,6 @@
                 ctx.fillText(lines[k], startX, startY + (k * lineHeight));
             }
 
-            // Trả về tổng chiều cao khối text đã vẽ để dòng tiếp theo (STK) dịch xuống hợp lý
             return (lines.length * lineHeight) + 10;
         }
 
@@ -385,7 +380,7 @@
             } catch (e) { 
                 console.error("Lỗi chi tiết khi load template:", e);
                 statusDiv.classList.add('hidden');
-                alert(`Không thể tải file ảnh "${templateUrl}". Vui lòng kiểm tra lại kết nối mạng hoặc thử làm mới (Ctrl + F5) trang web!`);
+                alert(`Không thể tải file ảnh "${templateUrl}". Hãy kiểm tra lại file trên GitHub đã đúng định dạng chữ thường chưa!`);
             }
         }
 
@@ -409,16 +404,12 @@
                     { x: 223, y: 3910, w: 1385, h: 375 }, { x: 1724, y: 3914, w: 1386, h: 367 }
                 ];
             } else if (selectedOption === 'op5') {
-                // ==========================================
-                // TỌA ĐỘ VÀ CẤU HÌNH RIÊNG BIỆT CHO OP5 (MOMO)
-                // ==========================================
                 textBoxes = [
                     { x: 215, y: 1711, w: 1390, h: 340 }, { x: 1727, y: 1717, w: 1363, h: 317 }, 
                     { x: 219, y: 3968, w: 1374, h: 325 }, { x: 1719, y: 3954, w: 1371, h: 336 }
                 ];
             }
 
-            // Xác định màu chữ riêng: OP5 dùng màu đen/hồng đặc trưng, OP1/OP2 dùng màu đỏ
             let textColor = (selectedOption === 'op5') ? "#000000" : "#FF0000";
 
             textBoxes.forEach((box, index) => {
@@ -430,14 +421,11 @@
                 }
                 let curY = box.y + 10;
                 
-                // Vẽ CTK có tự động xuống dòng (Word Wrap) dựa theo maxWidth của từng box
                 let ctkH = drawWrappedCustomTextLine(ctx, "CTK:", ctk, box.x + 30, curY, box.w - 40, currentCtkOffset, true, textColor);
                 curY += ctkH + 5;
                 
-                // Vẽ STK
                 let stkH = drawStandardLine(ctx, "STK:", stk, box.x + 30, curY, currentStkOffset, true, textColor);
                 
-                // Vẽ MTK nếu có
                 if(mtk && mtk !== "0") {
                     curY += stkH + 5;
                     drawStandardLine(ctx, "MTK:", mtk, box.x + 30, curY, currentStkOffset, true, textColor);
@@ -467,7 +455,6 @@
                         let ctk = String(r[0] || '').trim().toUpperCase();
                         let stk = String(r[1] || '').trim();
                         let amount = r[2] ? String(r[2]).replace(/\D/g, '') : '';
-                        let typeOpt = document.querySelector('input[name="optionType"]:checked').value;
                         if(!ctk || !stk) continue;
                         let vietqrUrl = `https://img.vietqr.io/image/970428-${stk}-compact.png?accountName=${encodeURIComponent(ctk)}${amount ? '&amount='+amount : ''}`;
                         try {
