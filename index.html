@@ -410,7 +410,7 @@
                 ];
             }
 
-            let textColor = (selectedOption === 'op5') ? "#000000" : "#FF0000";
+            let textColor = (selectedOption === 'op5') ? "#FF0000" : "#FF0000";
 
             textBoxes.forEach((box, index) => {
                 if (selectedOption === 'op1' && index === 2) {
@@ -421,15 +421,18 @@
                 }
                 let curY = box.y + 10;
                 
-                let ctkH = drawWrappedCustomTextLine(ctx, "CTK:", ctk, box.x + 30, curY, box.w - 40, currentCtkOffset, true, textColor);
-                curY += ctkH + 5;
-                
-                let stkH = drawStandardLine(ctx, "STK:", stk, box.x + 30, curY, currentStkOffset, true, textColor);
-                
-                if(mtk && mtk !== "0") {
-                    curY += stkH + 5;
-                    drawStandardLine(ctx, "MTK:", mtk, box.x + 30, curY, currentStkOffset, true, textColor);
-                }
+    function drawStandardLine(ctx, label, text, startX, startY, customOffset = 0, isBoldValue = true, textColor = "#FF0000") {
+    ctx.textBaseline = "top";
+    let fontSize = 62 + customOffset;
+    fontSize = Math.max(20, Math.min(fontSize, 150));
+    ctx.textAlign = "left";
+    // Ép toàn bộ dòng (cả nhãn label lẫn nội dung) thành chữ đậm (bold)
+    ctx.font = `bold ${fontSize}px Arial`;
+    ctx.fillStyle = textColor;
+    ctx.fillText(label + " " + text, startX, startY);
+    
+    return fontSize + 10;
+}
             });
 
             document.getElementById('downloadBtn').href = canvas.toDataURL("image/jpeg", 0.95);
