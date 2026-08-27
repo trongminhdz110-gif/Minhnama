@@ -191,7 +191,7 @@
             
             const bankBinSelect = document.getElementById('bankBin');
             if (opt === 'op5') {
-                bankBinSelect.value = "970448"; // Mã BIN MoMo hoặc định danh MoMo phù hợp
+                bankBinSelect.value = "970448";
                 bankBinSelect.disabled = true;
             } else {
                 bankBinSelect.disabled = false;
@@ -199,7 +199,8 @@
 
             const btn = document.getElementById('actionBtn');
             if (opt === 'op5') btn.innerText = "✨ Tạo Mã QR & Xem Trước (OP5 - MoMo)";
-            else if (isSingle) btn.innerText = "✨ Tạo Mã QR & Xem Trước (OP1 / OP2)";
+            else if (opt === 'op1') btn.innerText = "✨ Tạo Mã QR & Xem Trước (OP1 - MICA & Loa)";
+            else if (opt === 'op2') btn.innerText = "✨ Tạo Mã QR & Xem Trước (OP2 - MICA FULL)";
             else if (opt === 'op3') btn.innerText = "📦 Xuất File Hàng Loạt (OP3 - Excel)";
             else btn.innerText = "📦 Xuất File Định Mức (OP4 - Nhập Tay)";
         }
@@ -299,8 +300,13 @@
             }
             
             try {
-                if (!cachedTemplates[selectedOption]) cachedTemplates[selectedOption] = await loadNetworkImage(templateUrl);
-                if (lastQrUrl !== vietqrUrl) { cachedRawQR = await loadNetworkImage(vietqrUrl); lastQrUrl = vietqrUrl; }
+                if (!cachedTemplates[selectedOption]) {
+                    cachedTemplates[selectedOption] = await loadNetworkImage(templateUrl);
+                }
+                if (lastQrUrl !== vietqrUrl) {
+                    cachedRawQR = await loadNetworkImage(vietqrUrl);
+                    lastQrUrl = vietqrUrl;
+                }
 
                 lastRenderData = { selectedOption, ctk, stk, mtk };
                 const templateImg = cachedTemplates[selectedOption];
@@ -316,15 +322,16 @@
                         { x: 339, y: 367, w: 1132, h: 1132 }, { x: 1836, y: 369, w: 1127, h: 1126 }, 
                         { x: 266, y: 2532, w: 761, h: 709 }, { x: 1833, y: 2627, w: 1127, h: 1120 }
                     ];
+                } else if (selectedOption === 'op2') {
+                    // Tọa độ chuẩn xác cho OP2 (Mica Full)
+                    baseBoxes = [
+                        { x: 339, y: 367, w: 1132, h: 1132 }, { x: 1836, y: 369, w: 1127, h: 1126 }, 
+                        { x: 339, y: 2618, w: 1133, h: 1128 }, { x: 1835, y: 2623, w: 1135, h: 1128 }
+                    ];
                 } else if (selectedOption === 'op5') {
                     baseBoxes = [
                         { x: 337, y: 277, w: 1142, h: 1134 }, { x: 1826, y: 281, w: 1150, h: 1130 }, 
                         { x: 329, y: 2527, w: 1142, h: 1134 }, { x: 1826, y: 2531, w: 1150, h: 1126 }
-                    ];
-                } else {
-                    baseBoxes = [
-                        { x: 339, y: 367, w: 1132, h: 1132 }, { x: 1836, y: 369, w: 1127, h: 1126 }, 
-                        { x: 339, y: 2618, w: 1133, h: 1128 }, { x: 1835, y: 2623, w: 1135, h: 1128 }
                     ];
                 }
 
@@ -337,8 +344,9 @@
                 document.getElementById('livePreviewSection').classList.remove('hidden');
                 statusDiv.classList.add('hidden');
             } catch (e) { 
+                console.error("Lỗi chi tiết khi load template:", e);
                 statusDiv.classList.add('hidden');
-                alert("Lỗi tải ảnh hoặc tạo QR. Vui lòng kiểm tra lại kết nối mạng!");
+                alert("Không thể tải ảnh template của mục này. Hãy kiểm tra lại xem tên file template_op2.jpg trên GitHub có đúng chính tả hoặc đã được đẩy lên kho lưu trữ chưa!");
             }
         }
 
@@ -356,15 +364,15 @@
                     { x: 268, y: 1650, w: 1350, h: 338 }, { x: 1728, y: 1666, w: 1378, h: 352 }, 
                     { x: 214, y: 3263, w: 870, h: 174 }, { x: 1724, y: 3914, w: 1386, h: 357 }
                 ];
+            } else if (selectedOption === 'op2') {
+                textBoxes = [
+                    { x: 238, y: 1662, w: 1378, h: 375 }, { x: 1728, y: 1666, w: 1378, h: 379 }, 
+                    { x: 223, y: 3910, w: 1385, h: 375 }, { x: 1724, y: 3914, w: 1386, h: 367 }
+                ];
             } else if (selectedOption === 'op5') {
                 textBoxes = [
                     { x: 215, y: 1711, w: 1390, h: 340 }, { x: 1727, y: 1717, w: 1363, h: 317 }, 
                     { x: 219, y: 3968, w: 1374, h: 325 }, { x: 1719, y: 3954, w: 1371, h: 336 }
-                ];
-            } else {
-                textBoxes = [
-                    { x: 238, y: 1662, w: 1378, h: 375 }, { x: 1728, y: 1666, w: 1378, h: 379 }, 
-                    { x: 223, y: 3910, w: 1385, h: 375 }, { x: 1724, y: 3914, w: 1386, h: 367 }
                 ];
             }
 
@@ -378,10 +386,10 @@
                 let curY = box.y + 10;
                 let ctkH = drawCustomTextLine(ctx, "CTK:", ctk, box.x + 30, curY, box.w, currentCtkOffset, true);
                 curY += ctkH + 5;
-                let stkH = drawCustomTextLine(ctx, "STK:", stk, box.x + 30, curY, box.w, currentStkOffset, true);
+                let stkH = drawCustomTextLine(ctx, "STK:", stk, box.x + 30, curY, box.w, currentCtkOffset, true);
                 if(mtk && mtk !== "0") {
                     curY += stkH + 5;
-                    drawCustomTextLine(ctx, "MTK:", mtk, box.x + 30, curY, box.w, currentStkOffset, true);
+                    drawCustomTextLine(ctx, "MTK:", mtk, box.x + 30, curY, box.w, currentCtkOffset, true);
                 }
             });
 
@@ -461,8 +469,11 @@
 
         async function loadNetworkImage(url) {
             return new Promise((res, rej) => {
-                const i = new Image(); i.crossOrigin = "Anonymous";
-                i.onload = () => res(i); i.onerror = rej; i.src = url;
+                const i = new Image();
+                i.crossOrigin = "anonymous";
+                i.onload = () => res(i);
+                i.onerror = (err) => rej(err);
+                i.src = url;
             });
         }
 
