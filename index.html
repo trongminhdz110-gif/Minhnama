@@ -312,10 +312,10 @@
                 tempCanvas.width = templateImg.width; tempCanvas.height = templateImg.height;
                 const tCtx = tempCanvas.getContext('2d');
                 tCtx.drawImage(templateImg, 0, 0);
-sửa tọa độ OP5
+
                 const baseBoxes = selectedOption === 'op1' || selectedOption === 'op5' ? 
                     [ {x: 339, y: 367, w: 1132, h: 1132}, {x: 1836, y: 369, w: 1127, h: 1126}, {x: 266, y: 2532, w: 761, h: 709}, { x: 1833, y: 2627, w: 1127, h: 1120 } ] :
-                    [ { x: 329, y: 281, w: 1154, h: 1130 },{ x: 1830, y: 277, w: 1142, h: 1130 },{ x: 329, y: 2524, w: 1150, h: 1133 },{ x: 1826, y: 2527, w: 1146, h: 1130 } ];
+                    [ {x: 339, y: 367, w: 1132, h: 1132}, {x: 1836, y: 369, w: 1127, h: 1126}, {x: 339, y: 2618, w: 1133, h: 1128}, {x: 1835, y: 2623, w: 1135, h: 1128} ];
 
                 const croppedQR = cropPureQR(rawQrImg);
                 baseBoxes.forEach(box => tCtx.drawImage(croppedQR, box.x, box.y, box.w, box.h));
