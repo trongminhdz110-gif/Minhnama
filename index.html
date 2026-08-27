@@ -26,7 +26,7 @@
         .btn-secondary:hover { background: #ecfdf5; }
         .hidden { display: none !important; }
         .radio-group { display: flex; flex-direction: column; gap: 8px; }
-        .radio-row { display: flex; gap: 16px; align-items: center; }
+        .radio-row { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
         canvas { max-width: 100%; height: auto; border: 1px solid #d1d5db; border-radius: 8px; background: #fff; }
         .preview-section { margin-top: 20px; border-top: 1px solid #e5e7eb; padding-top: 16px; }
         .slider-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
@@ -39,7 +39,7 @@
         <div class="header">
             <div>
                 <h1 style="font-size: 22px; font-weight: 800; margin: 0 0 4px 0;">Tạo Mã QR Thanh Toán</h1>
-                <p style="font-size: 11px; font-weight: bold; color: #2563eb; margin: 0; letter-spacing: 0.5px;">MỘT CHẠM_MỌI TRẢM NHIỆM BYE MINHNT2</p>
+                <p style="font-size: 11px; font-weight: bold; color: #2563eb; margin: 0; letter-spacing: 0.5px;">MỘT CHẠM _ MỌI TRẢM NHIỆM BYE MINHNT2</p>
             </div>
             <div class="logo-box">
                 <img src="logo_namabank.png" alt="Nam A Bank" onerror="this.style.display='none'">
@@ -85,6 +85,7 @@
                     <option value="970415">VietinBank</option>
                     <option value="970418">BIDV</option>
                     <option value="970405">Agribank</option>
+                    <option value="momo">MoMo</option>
                 </select>
             </div>
             <div class="form-group">
@@ -105,7 +106,7 @@
         <div id="excelInputGroup" class="hidden">
             <div style="background: #ecfdf5; padding: 14px; border-radius: 10px; border: 1px solid #a7f3d0;">
                 <button onclick="downloadSampleExcel()" class="btn-secondary">📥 Tải File Excel Mẫu (Tên, STK, Số Tiền)</button>
-                <input type="file" id="excelFile" accept=".xlsx, .xls, .csv" style="width:100%; font-size:13px; background:white; padding:8px; border:1px solid #a7f3d0; border-radius:8px;">
+                <input type="file" id="excelFile" accept=".xlsx, .xls, .csv" style="width:100%; font-size:13px; background:white; padding:8px; border:1px solid #a7f3d0; border-radius:8px; margin-top:8px;">
                 <div id="excelLog" class="hidden" style="margin-top:10px; padding:8px; background:white; border:1px solid #a7f3d0; border-radius:8px; font-size:12px; font-family:monospace; max-height:120px; overflow-y:auto;"></div>
             </div>
         </div>
@@ -113,7 +114,7 @@
         <!-- OP4 MANUAL INPUT -->
         <div id="op4InputGroup" class="hidden">
             <div style="background: #faf5ff; padding: 14px; border-radius: 10px; border: 1px solid #e9d5ff;">
-                <label style="color: #6b21a8; margin-bottom: 8px;">Danh sách (Ngân hàng: Nam A Bank):</label>
+                <label style="color: #6b21a8; margin-bottom: 8px;">Danh sách định mức:</label>
                 <div style="overflow-x: auto; padding-bottom: 6px;">
                     <div id="op4RowsContainer" style="display: flex; flex-direction: column; gap: 8px; min-width: 520px;">
                         <div style="display: grid; grid-template-columns: 2fr 1.3fr 1.3fr auto; gap: 8px; align-items: center;" class="op4-row">
@@ -156,7 +157,7 @@
                 <canvas id="resultCanvas" style="max-height: 450px; width: auto; margin: 0 auto; display: block;"></canvas>
             </div>
             
-            <div style="margin-top: 14px; display: flex; justify-content: center; gap: 10px;">
+            <div style="margin-top: 14px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
                 <a id="downloadBtn" class="hidden" style="background: #059669; color: white; font-weight: bold; padding: 10px 20px; border-radius: 10px; text-decoration: none; font-size: 14px;" download="bang-mica.jpg">Tải ảnh JPG gốc</a>
                 <button onclick="downloadPDF()" id="pdfBtn" class="hidden" style="background: #e11d48; color: white; font-weight: bold; padding: 10px 20px; border-radius: 10px; border: none; cursor: pointer; font-size: 14px;">Tải file PDF</button>
             </div>
@@ -194,6 +195,7 @@
                 bankBinSelect.value = "momo";
                 bankBinSelect.disabled = true;
             } else {
+                if(bankBinSelect.value === "momo") bankBinSelect.value = "970428";
                 bankBinSelect.disabled = false;
             }
 
@@ -380,7 +382,7 @@
             } catch (e) { 
                 console.error("Lỗi chi tiết khi load template:", e);
                 statusDiv.classList.add('hidden');
-                alert(`Không thể tải file ảnh hoặc mã QR. Hãy kiểm tra lại kết nối mạng!`);
+                alert(`Không thể tải file ảnh template hoặc mã QR. Hãy kiểm tra lại kết nối mạng hoặc file template (template_op1.jpg, template_op2.jpg, template_op5.jpg)!`);
             }
         }
 
@@ -410,7 +412,7 @@
                 ];
             }
 
-            let textColor = (selectedOption === 'op5') ? "#FF0000" : "#FF0000";
+            let textColor = (selectedOption === 'op5') ? "#000000" : "#FF0000";
 
             textBoxes.forEach((box, index) => {
                 if (selectedOption === 'op1' && index === 2) {
@@ -421,18 +423,15 @@
                 }
                 let curY = box.y + 10;
                 
-    function drawStandardLine(ctx, label, text, startX, startY, customOffset = 0, isBoldValue = true, textColor = "#FF0000") {
-    ctx.textBaseline = "top";
-    let fontSize = 62 + customOffset;
-    fontSize = Math.max(20, Math.min(fontSize, 150));
-    ctx.textAlign = "left";
-    // Ép toàn bộ dòng (cả nhãn label lẫn nội dung) thành chữ đậm (bold)
-    ctx.font = `bold ${fontSize}px Arial`;
-    ctx.fillStyle = textColor;
-    ctx.fillText(label + " " + text, startX, startY);
-    
-    return fontSize + 10;
-}
+                let ctkH = drawWrappedCustomTextLine(ctx, "CTK:", ctk, box.x + 30, curY, box.w - 40, currentCtkOffset, true, textColor);
+                curY += ctkH + 5;
+                
+                let stkH = drawStandardLine(ctx, "STK:", stk, box.x + 30, curY, currentStkOffset, true, textColor);
+                
+                if(mtk && mtk !== "0") {
+                    curY += stkH + 5;
+                    drawStandardLine(ctx, "MTK:", mtk, box.x + 30, curY, currentStkOffset, true, textColor);
+                }
             });
 
             document.getElementById('downloadBtn').href = canvas.toDataURL("image/jpeg", 0.95);
@@ -472,6 +471,8 @@
                         const content = await zip.generateAsync({type: "blob"});
                         const link = document.createElement('a'); link.href = URL.createObjectURL(content); link.download = "QR_HangLoat_NAB.zip"; link.click();
                         logDiv.innerText = `✅ Đã xuất thành công ${successCount} mã QR!`;
+                    } else {
+                        logDiv.innerText = "Không tìm thấy dữ liệu hợp lệ trong file Excel.";
                     }
                 } catch(err) { logDiv.innerText = "Lỗi đọc file: " + err.message; }
             };
