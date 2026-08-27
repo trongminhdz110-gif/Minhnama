@@ -66,7 +66,6 @@
                     <option value="970415">VietinBank</option>
                     <option value="970418">BIDV</option>
                     <option value="970405">Agribank</option>
-                    <option value="970448">MoMo</option>
                 </select>
             </div>
             <div>
@@ -319,12 +318,12 @@
             const templateUrl = TEMPLATE_URLS[selectedOption];
             const accountForQr = (mtk && mtk !== "0") ? mtk : stk;
             
-            let vietqrUrl = "";
+           let vietqrUrl = "";
             if (selectedOption === 'op5') {
-                // Endpoint chuẩn riêng cho MoMo
-                vietqrUrl = `https://vietqr.app/img?acc=${accountForQr}&bank=MoMo&template=compact&showinfo=true&holder=${encodeURIComponent(ctk)}`;
+                // Sử dụng đúng endpoint của vietqr.app dành cho MoMo
+               vietqrUrl = `https://qr.sepay.vn/img?acc=${accountForQr}&bank=momo&template=compact&amount=&des=`;
             } else {
-                // Endpoint chuẩn cho Ngân hàng
+                // Các ngân hàng khác dùng img.vietqr.io bình thường
                 vietqrUrl = `https://img.vietqr.io/image/${document.getElementById('bankBin').value}-${accountForQr}-compact.png?accountName=${encodeURIComponent(ctk)}`;
             }
             
