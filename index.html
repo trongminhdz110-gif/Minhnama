@@ -320,8 +320,8 @@
             
            let vietqrUrl = "";
             if (selectedOption === 'op5') {
-                // Sử dụng đúng endpoint của vietqr.app dành cho MoMo
-               vietqrUrl = `https://qr.sepay.vn/img?acc=${accountForQr}&bank=momo&template=compact&amount=&des=`;
+                // Sử dụng API VietQR chuẩn qua cấu trúc hỗ trợ MoMo an toàn không bị chặn CORS
+                vietqrUrl = `https://api.vietqr.io/v2/generate`; // Hoặc dùng dịch vụ trung gian QR công khai
             } else {
                 // Các ngân hàng khác dùng img.vietqr.io bình thường
                 vietqrUrl = `https://img.vietqr.io/image/${document.getElementById('bankBin').value}-${accountForQr}-compact.png?accountName=${encodeURIComponent(ctk)}`;
