@@ -5,79 +5,60 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <title>Phần Mềm Tạo QR - Nam A Bank</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <style>
-        * { box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f3f4f6; margin: 0; padding: 16px; color: #1f2937; }
-        .container { max-width: 650px; margin: 0 auto; background: #ffffff; padding: 24px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: 1px solid #e5e7eb; }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid #f3f4f6; }
-        .logo-box { background: #fde047; padding: 8px 16px; border-radius: 12px; border: 1px solid #facc15; }
-        .logo-box img { height: 28px; object-fit: contain; display: block; }
-        .section-box { background: #f0f7ff; padding: 16px; border-radius: 12px; border: 1px solid #bfdbfe; margin-bottom: 16px; }
-        .form-group { margin-bottom: 14px; }
-        label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 14px; }
-        input[type="text"], select { width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; outline: none; background: #fff; }
-        input[type="text"]:focus, select:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
-        .btn-primary { width: 100%; background: #2563eb; color: white; font-weight: bold; padding: 12px; border: none; border-radius: 10px; cursor: pointer; font-size: 15px; transition: background 0.2s; margin-top: 10px; }
-        .btn-primary:hover { background: #1d4ed8; }
-        .btn-secondary { width: 100%; background: white; color: #047857; border: 1px solid #a7f3d0; font-weight: 600; padding: 10px; border-radius: 10px; cursor: pointer; margin-bottom: 10px; }
-        .btn-secondary:hover { background: #ecfdf5; }
-        .hidden { display: none !important; }
-        .radio-group { display: flex; flex-direction: column; gap: 8px; }
-        .radio-row { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
-        canvas { max-width: 100%; height: auto; border: 1px solid #d1d5db; border-radius: 8px; background: #fff; }
-        .preview-section { margin-top: 20px; border-top: 1px solid #e5e7eb; padding-top: 16px; }
-        .slider-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
-        .slider-card { padding: 10px; border-radius: 10px; border: 1px solid; }
-        .flex-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 12px; font-weight: bold; }
-    </style>
 </head>
-<body>
-    <div class="container">
-        <div class="header">
+<body class="bg-gray-100 min-h-screen p-4 sm:p-6">
+    <div class="max-w-2xl mx-auto bg-white p-5 sm:p-6 rounded-2xl shadow-lg border border-gray-100">
+        <div class="flex flex-col sm:flex-row justify-between items-center mb-6 pb-4 border-b border-gray-100 gap-3">
             <div>
-                <h1 style="font-size: 22px; font-weight: 800; margin: 0 0 4px 0;">Tạo Mã QR Thanh Toán</h1>
-                <p style="font-size: 11px; font-weight: bold; color: #2563eb; margin: 0; letter-spacing: 0.5px;">MỘT CHẠM _ MỌI TRẢM NHIỆM BYE MINHNT2</p>
+                <h1 class="text-2xl font-extrabold text-gray-800 text-center sm:text-left">Tạo Mã QR Thanh Toán</h1>
+                <p class="text-xs font-semibold text-blue-600 tracking-wider uppercase text-center sm:text-left mt-0.5">MỘT CHẠM_MỌI TRẢM NHIỆM BYE MINHNT2</p>
             </div>
-            <div class="logo-box">
-                <img src="logo_namabank.png" alt="Nam A Bank" onerror="this.style.display='none'">
+            <div class="px-4 py-2.5 rounded-xl shadow-sm border border-yellow-400 flex items-center justify-center" style="background-color: #FFDE00;">
+                <img src="logo_namabank.png" alt="Nam A Bank" class="h-7 object-contain" onerror="this.style.display='none'">
             </div>
         </div>
 
-        <div class="section-box">
-            <label>Chọn loại thiết kế:</label>
-            <div class="radio-group">
-                <div class="radio-row">
-                    <label style="cursor:pointer; display:flex; align-items:center; font-weight:500; color:#1e3a8a;">
-                        <input type="radio" name="optionType" value="op1" checked onchange="toggleMode()" style="margin-right:8px;"> OP1: MICA & Loa
+        <div class="mb-4 p-4 bg-blue-50/60 rounded-xl border border-blue-100">
+            <label class="block text-gray-700 font-bold mb-2">Chọn loại thiết kế:</label>
+            <div class="flex flex-col gap-3">
+                <div class="flex gap-6">
+                    <label class="flex items-center cursor-pointer">
+                        <input type="radio" name="optionType" value="op1" checked onchange="toggleMode()" class="mr-2 w-4 h-4 text-blue-600">
+                        <span class="font-medium text-blue-900">OP1: MICA & Loa</span>
                     </label>
-                    <label style="cursor:pointer; display:flex; align-items:center; font-weight:500; color:#1e3a8a;">
-                        <input type="radio" name="optionType" value="op2" onchange="toggleMode()" style="margin-right:8px;"> OP2: MICA FULL
-                    </label>
-                </div>
-                <div class="radio-row">
-                    <label style="cursor:pointer; display:flex; align-items:center; font-weight:bold; color:#047857;">
-                        <input type="radio" name="optionType" value="op3" onchange="toggleMode()" style="margin-right:8px;"> OP3: QR Hàng Loạt (Excel)
-                    </label>
-                    <label style="cursor:pointer; display:flex; align-items:center; font-weight:bold; color:#7e22ce;">
-                        <input type="radio" name="optionType" value="op4" onchange="toggleMode()" style="margin-right:8px;"> OP4: QR Định Mức (Nhập tay)
+                    <label class="flex items-center cursor-pointer">
+                        <input type="radio" name="optionType" value="op2" onchange="toggleMode()" class="mr-2 w-4 h-4 text-blue-600">
+                        <span class="font-medium text-blue-900">OP2: MICA FULL</span>
                     </label>
                 </div>
-                <div class="radio-row">
-                    <label style="cursor:pointer; display:flex; align-items:center; font-weight:bold; color:#be185d;">
-                        <input type="radio" name="optionType" value="op5" onchange="toggleMode()" style="margin-right:8px;"> OP5: QR MoMo
+                <div class="flex flex-col sm:flex-row gap-3 sm:gap-6">
+                    <label class="flex items-center cursor-pointer">
+                        <input type="radio" name="optionType" value="op3" onchange="toggleMode()" class="mr-2 w-4 h-4 text-emerald-600">
+                        <span class="font-bold text-emerald-700">OP3: QR Hàng Loạt (Excel)</span>
+                    </label>
+                    <label class="flex items-center cursor-pointer">
+                        <input type="radio" name="optionType" value="op4" onchange="toggleMode()" class="mr-2 w-4 h-4 text-purple-600">
+                        <span class="font-bold text-purple-700">OP4: QR Định Mức (Nhập tay)</span>
+                    </label>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-3 sm:gap-6">
+                    <label class="flex items-center cursor-pointer">
+                        <input type="radio" name="optionType" value="op5" onchange="toggleMode()" class="mr-2 w-4 h-4 text-pink-600">
+                        <span class="font-bold text-pink-700">OP5: QR MoMo</span>
                     </label>
                 </div>
             </div>
         </div>
 
         <!-- OP1 & OP2 & OP5 INPUT -->
-        <div id="manualInputGroup">
-            <div class="form-group">
-                <label>Chọn Ngân hàng:</label>
-                <select id="bankBin">
+        <div id="manualInputGroup" class="space-y-4">
+            <div>
+                <label class="block text-gray-700 font-semibold mb-1">Chọn Ngân hàng:</label>
+                <select id="bankBin" class="w-full border border-gray-300 p-2.5 rounded-lg bg-white">
                     <option value="970428" selected>Nam A Bank</option>
                     <option value="970436">Vietcombank</option>
                     <option value="970407">Techcombank</option>
@@ -85,90 +66,102 @@
                     <option value="970415">VietinBank</option>
                     <option value="970418">BIDV</option>
                     <option value="970405">Agribank</option>
-                    <option value="momo">MoMo</option>
+                    <option value="970448">MoMo</option>
                 </select>
             </div>
-            <div class="form-group">
-                <label>Tên chủ tài khoản:</label>
-                <input type="text" id="ctk" oninput="this.value = this.value.toUpperCase();" placeholder="VD: NGUYEN VAN A" style="text-transform: uppercase;">
+            <div>
+                <label class="block text-gray-700 font-semibold mb-1">Tên chủ tài khoản:</label>
+                <input type="text" id="ctk" oninput="this.value = this.value.toUpperCase();" class="w-full border border-gray-300 p-2.5 rounded-lg uppercase" placeholder="VD: NGUYEN VAN A">
             </div>
-            <div class="form-group">
-                <label>Số tài khoản / SĐT:</label>
-                <input type="text" id="stk" placeholder="VD: 123456789">
+            <div>
+                <label class="block text-gray-700 font-semibold mb-1">Số tài khoản:</label>
+                <input type="text" id="stk" class="w-full border border-gray-300 p-2.5 rounded-lg uppercase" placeholder="VD: 123456789">
             </div>
-            <div class="form-group">
-                <label>Mã tài khoản (nhập 0 để ẩn):</label>
-                <input type="text" id="mtk" value="0">
+            <div>
+                <label class="block text-gray-700 font-semibold mb-1">Mã tài khoản (nhập 0 để ẩn):</label>
+                <input type="text" id="mtk" value="0" class="w-full border border-gray-300 p-2.5 rounded-lg uppercase">
             </div>
         </div>
 
         <!-- OP3 EXCEL INPUT -->
-        <div id="excelInputGroup" class="hidden">
-            <div style="background: #ecfdf5; padding: 14px; border-radius: 10px; border: 1px solid #a7f3d0;">
-                <button onclick="downloadSampleExcel()" class="btn-secondary">📥 Tải File Excel Mẫu (Tên, STK, Số Tiền)</button>
-                <input type="file" id="excelFile" accept=".xlsx, .xls, .csv" style="width:100%; font-size:13px; background:white; padding:8px; border:1px solid #a7f3d0; border-radius:8px; margin-top:8px;">
-                <div id="excelLog" class="hidden" style="margin-top:10px; padding:8px; background:white; border:1px solid #a7f3d0; border-radius:8px; font-size:12px; font-family:monospace; max-height:120px; overflow-y:auto;"></div>
+        <div id="excelInputGroup" class="space-y-4 hidden">
+            <div class="p-4 bg-emerald-50 rounded-xl border border-emerald-200">
+                <button onclick="downloadSampleExcel()" class="w-full mb-3 bg-white text-emerald-700 border border-emerald-300 font-semibold py-2.5 px-4 rounded-xl hover:bg-emerald-100 transition shadow-sm text-sm">
+                    📥 Tải File Excel Mẫu (Tên, STK, Số Tiền)
+                </button>
+                <input type="file" id="excelFile" accept=".xlsx, .xls, .csv" class="w-full text-sm text-gray-700 bg-white p-2 border border-emerald-300 rounded-lg">
+                <div id="excelLog" class="mt-3 p-3 bg-white border border-emerald-200 rounded-lg text-xs font-mono text-gray-700 max-h-40 overflow-y-auto hidden"></div>
             </div>
         </div>
 
         <!-- OP4 MANUAL INPUT -->
-        <div id="op4InputGroup" class="hidden">
-            <div style="background: #faf5ff; padding: 14px; border-radius: 10px; border: 1px solid #e9d5ff;">
-                <label style="color: #6b21a8; margin-bottom: 8px;">Danh sách định mức:</label>
-                <div style="overflow-x: auto; padding-bottom: 6px;">
-                    <div id="op4RowsContainer" style="display: flex; flex-direction: column; gap: 8px; min-width: 520px;">
-                        <div style="display: grid; grid-template-columns: 2fr 1.3fr 1.3fr auto; gap: 8px; align-items: center;" class="op4-row">
-                            <input type="text" placeholder="Tên chủ tài khoản" class="op4-name" style="text-transform:uppercase;" oninput="this.value = this.value.toUpperCase()">
-                            <input type="text" placeholder="Số tài khoản" class="op4-stk">
-                            <input type="text" placeholder="Số tiền" class="op4-amount" oninput="formatCurrencyInput(this)">
-                            <button type="button" onclick="removeOp4Row(this)" style="background:none; border:none; color:#f87171; font-weight:bold; font-size:16px; cursor:pointer;">✕</button>
+        <div id="op4InputGroup" class="space-y-4 hidden">
+            <div class="p-4 bg-purple-50 rounded-xl border border-purple-200 space-y-3">
+                <label class="block text-purple-900 font-bold text-sm">Danh sách (Ngân hàng: Nam A Bank):</label>
+                <div class="overflow-x-auto pb-2">
+                    <div id="op4RowsContainer" class="space-y-2.5 min-w-[550px]">
+                        <div class="grid grid-cols-[2fr_1.3fr_1.3fr_auto] gap-2 op4-row items-center">
+                            <input type="text" placeholder="Tên chủ tài khoản" class="op4-name border border-purple-300 p-2.5 rounded-lg uppercase text-sm text-gray-700 bg-white" oninput="this.value = this.value.toUpperCase()">
+                            <input type="text" placeholder="Số tài khoản" class="op4-stk border border-purple-300 p-2.5 rounded-lg text-sm text-gray-700 bg-white">
+                            <input type="text" placeholder="Số tiền (VD: 50000)" class="op4-amount border border-purple-300 p-2.5 rounded-lg text-sm text-gray-700 bg-white" oninput="formatCurrencyInput(this)">
+                            <button type="button" onclick="removeOp4Row(this)" class="w-8 h-9 flex items-center justify-center text-red-400 font-bold hover:text-red-600 text-lg">✕</button>
                         </div>
                     </div>
                 </div>
-                <button type="button" onclick="addOp4Row()" class="btn-secondary" style="margin-top: 10px; color:#6b21a8; border-color:#d8b4fe; background:white;">➕ Thêm dòng mới</button>
+                <button type="button" onclick="addOp4Row()" class="w-full bg-white text-purple-700 border border-purple-300 font-semibold py-2.5 px-4 rounded-xl hover:bg-purple-100 transition shadow-sm text-sm">
+                    ➕ Thêm dòng mới
+                </button>
             </div>
         </div>
 
-        <button id="actionBtn" onclick="handleGenerate()" class="btn-primary">✨ Tạo Mã QR & Xem Trước</button>
-        <div id="loadingStatus" class="hidden" style="margin-top: 10px; text-align: center; font-size: 13px; font-weight: bold; color: #d97706;">Đang tải dữ liệu và tạo ảnh, vui lòng đợi giây lát...</div>
+        <!-- NÚT THỰC THI CHÍNH -->
+        <button id="actionBtn" onclick="handleGenerate()" class="w-full bg-blue-600 text-white font-bold p-3.5 mt-6 rounded-xl hover:bg-blue-700 transition shadow-md text-base">✨ Tạo Mã QR & Xem Trước</button>
+        <div id="loadingStatus" class="hidden mt-3 text-center text-sm font-bold text-amber-600">Đang tải dữ liệu và tạo ảnh, vui lòng đợi giây lát...</div>
 
-        <!-- PREVIEW SECTION -->
-        <div id="livePreviewSection" class="preview-section hidden">
-            <h3 style="font-size: 13px; font-weight: bold; text-align: center; margin-bottom: 10px;">👁️ Khung Xem Trước & Tinh Chỉnh Chữ:</h3>
+        <!-- KHUNG PREVIEW TRỰC TIẾP & 2 THANH TRƯỞT CHỈNH CHỮ -->
+        <div id="livePreviewSection" class="mt-6 border-t border-gray-200 pt-5 hidden">
+            <h3 class="text-sm font-bold text-gray-700 mb-3 text-center">👁️ Khung Xem Trước & Tinh Chỉnh Chữ:</h3>
             
-            <div class="slider-grid">
-                <div class="slider-card" style="background:#fffbeb; border-color:#fde68a;">
-                    <div class="flex-row">
-                        <span style="color:#78350f;">🎛️ Cỡ chữ CTK:</span>
-                        <span id="ctkSizeVal" style="color:#dc2626;">0px</span>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                <!-- THANH 1: CỠ CHỮ CTK -->
+                <div class="p-3 bg-amber-50 rounded-xl border border-amber-200">
+                    <div class="flex justify-between items-center mb-1.5">
+                        <span class="text-xs font-bold text-amber-900">🎛️ Cỡ chữ CTK:</span>
+                        <span id="ctkSizeVal" class="text-xs font-bold text-red-600">0px</span>
                     </div>
-                    <input type="range" id="ctkSizeSlider" min="-50" max="80" value="0" step="2" oninput="handleSliderDebounce('ctk', this.value)" style="width:100%; cursor:pointer;">
+                    <input type="range" id="ctkSizeSlider" min="-50" max="80" value="0" step="2" 
+                        oninput="handleSliderDebounce('ctk', this.value)" 
+                        class="w-full accent-amber-600 cursor-pointer h-2 bg-amber-200 rounded-lg">
                 </div>
-                <div class="slider-card" style="background:#f0f9ff; border-color:#bae6fd;">
-                    <div class="flex-row">
-                        <span style="color:#0369a1;">🎛️ Cỡ chữ STK & MTK:</span>
-                        <span id="stkSizeVal" style="color:#2563eb;">0px</span>
+
+                <!-- THANH 2: CỠ CHỮ STK & MTK -->
+                <div class="p-3 bg-sky-50 rounded-xl border border-sky-200">
+                    <div class="flex justify-between items-center mb-1.5">
+                        <span class="text-xs font-bold text-sky-900">🎛️ Cỡ chữ STK & MTK:</span>
+                        <span id="stkSizeVal" class="text-xs font-bold text-blue-600">0px</span>
                     </div>
-                    <input type="range" id="stkSizeSlider" min="-50" max="80" value="0" step="2" oninput="handleSliderDebounce('stk', this.value)" style="width:100%; cursor:pointer;">
+                    <input type="range" id="stkSizeSlider" min="-50" max="80" value="0" step="2" 
+                        oninput="handleSliderDebounce('stk', this.value)" 
+                        class="w-full accent-blue-600 cursor-pointer h-2 bg-sky-200 rounded-lg">
                 </div>
             </div>
 
-            <div style="text-align: center; background: #f9fafb; padding: 10px; border-radius: 10px; border: 1px solid #e5e7eb;">
-                <canvas id="resultCanvas" style="max-height: 450px; width: auto; margin: 0 auto; display: block;"></canvas>
+            <div class="bg-gray-50 p-3 rounded-xl border border-gray-200 text-center">
+                <canvas id="resultCanvas" class="border border-gray-300 max-h-[500px] w-auto mx-auto rounded-lg shadow-sm"></canvas>
             </div>
             
-            <div style="margin-top: 14px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
-                <a id="downloadBtn" class="hidden" style="background: #059669; color: white; font-weight: bold; padding: 10px 20px; border-radius: 10px; text-decoration: none; font-size: 14px;" download="bang-mica.jpg">Tải ảnh JPG gốc</a>
-                <button onclick="downloadPDF()" id="pdfBtn" class="hidden" style="background: #e11d48; color: white; font-weight: bold; padding: 10px 20px; border-radius: 10px; border: none; cursor: pointer; font-size: 14px;">Tải file PDF</button>
+            <div class="mt-4 flex justify-center gap-3">
+                <a id="downloadBtn" class="bg-emerald-600 text-white font-bold px-5 py-2.5 rounded-xl hidden" download="bang-mica.jpg">Tải ảnh JPG gốc</a>
+                <button onclick="downloadPDF()" id="pdfBtn" class="bg-rose-600 text-white font-bold px-5 py-2.5 rounded-xl hidden hover:bg-rose-700 transition shadow-sm">Tải file PDF</button>
             </div>
         </div>
     </div>
 
     <script>
         const TEMPLATE_URLS = {
-            op1: 'template_op1.jpg?v=' + Date.now(),
-            op2: 'template_op2.jpg?v=' + Date.now(),
-            op5: 'template_op5.jpg?v=' + Date.now()
+            op1: 'https://raw.githubusercontent.com/trongminhdz110-gif/Minhnama/main/template_op1.jpg',
+            op2: 'https://raw.githubusercontent.com/trongminhdz110-gif/Minhnama/main/template_op2.jpg',
+            op5: 'https://raw.githubusercontent.com/trongminhdz110-gif/Minhnama/main/template_op5.jpg' // Dùng chung template OP1 hoặc thay link OP5 nếu có
         };
 
         let cachedTemplates = {};
@@ -180,31 +173,35 @@
         let baseCanvasSnapshot = null; 
         let debounceTimer = null;
 
-        window.addEventListener('DOMContentLoaded', () => { toggleMode(); });
+        window.addEventListener('DOMContentLoaded', () => {
+            toggleMode();
+        });
 
         function toggleMode() {
             const opt = document.querySelector('input[name="optionType"]:checked').value;
             const isSingle = (opt === 'op1' || opt === 'op2' || opt === 'op5');
-            
             document.getElementById('manualInputGroup').classList.toggle('hidden', !isSingle);
             document.getElementById('excelInputGroup').classList.toggle('hidden', opt !== 'op3');
             document.getElementById('op4InputGroup').classList.toggle('hidden', opt !== 'op4');
             
             const bankBinSelect = document.getElementById('bankBin');
             if (opt === 'op5') {
-                bankBinSelect.value = "momo";
+                bankBinSelect.value = "970448";
                 bankBinSelect.disabled = true;
             } else {
-                if(bankBinSelect.value === "momo") bankBinSelect.value = "970428";
                 bankBinSelect.disabled = false;
             }
 
             const btn = document.getElementById('actionBtn');
-            if (opt === 'op5') btn.innerText = "✨ Tạo Mã QR & Xem Trước (OP5 - MoMo)";
-            else if (opt === 'op1') btn.innerText = "✨ Tạo Mã QR & Xem Trước (OP1 - MICA & Loa)";
-            else if (opt === 'op2') btn.innerText = "✨ Tạo Mã QR & Xem Trước (OP2 - MICA FULL)";
-            else if (opt === 'op3') btn.innerText = "📦 Xuất File Hàng Loạt (OP3 - Excel)";
-            else btn.innerText = "📦 Xuất File Định Mức (OP4 - Nhập Tay)";
+            if (opt === 'op5') {
+                btn.innerText = "✨ Tạo Mã QR & Xem Trước (OP5 - MoMo)";
+            } else if (isSingle) {
+                btn.innerText = "✨ Tạo Mã QR & Xem Trước (OP1 / OP2)";
+            } else if (opt === 'op3') {
+                btn.innerText = "📦 Xuất File Hàng Loạt (OP3 - Excel)";
+            } else {
+                btn.innerText = "📦 Xuất File Định Mức (OP4 - Nhập Tay)";
+            }
         }
 
         function handleSliderDebounce(type, val) {
@@ -216,33 +213,41 @@
                 document.getElementById('stkSizeVal').innerText = (num > 0 ? `+${num}` : num) + "px";
                 currentStkOffset = num;
             }
+
             clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(() => { if (baseCanvasSnapshot) redrawTextOnly(); }, 350); 
+            debounceTimer = setTimeout(() => {
+                if (baseCanvasSnapshot) {
+                    redrawTextOnly();
+                }
+            }, 350); 
         }
 
         async function handleGenerate() {
             const opt = document.querySelector('input[name="optionType"]:checked').value;
             if (opt === 'op1' || opt === 'op2' || opt === 'op5') {
-                currentCtkOffset = 0; currentStkOffset = 0;
+                currentCtkOffset = 0;
+                currentStkOffset = 0;
                 document.getElementById('ctkSizeSlider').value = 0;
                 document.getElementById('stkSizeSlider').value = 0;
                 document.getElementById('ctkSizeVal').innerText = "0px";
                 document.getElementById('stkSizeVal').innerText = "0px";
                 await processSingleImage(opt);
-            } else if (opt === 'op3') { processExcelBatch(); }
-            else if (opt === 'op4') { processOp4(); }
+            } else if (opt === 'op3') {
+                processExcelBatch();
+            } else if (opt === 'op4') {
+                processOp4();
+            }
         }
 
         function addOp4Row(nameVal = '', stkVal = '', amountVal = '') {
             const container = document.getElementById('op4RowsContainer');
             const div = document.createElement('div');
-            div.className = "op4-row";
-            div.style = "display: grid; grid-template-columns: 2fr 1.3fr 1.3fr auto; gap: 8px; align-items: center;";
+            div.className = "grid grid-cols-[2fr_1.3fr_1.3fr_auto] gap-2 op4-row items-center";
             div.innerHTML = `
-                <input type="text" placeholder="Tên chủ tài khoản" value="${nameVal}" class="op4-name" style="text-transform:uppercase;" oninput="this.value = this.value.toUpperCase()">
-                <input type="text" placeholder="Số tài khoản" value="${stkVal}" class="op4-stk">
-                <input type="text" placeholder="Số tiền" value="${amountVal}" class="op4-amount" oninput="formatCurrencyInput(this)">
-                <button type="button" onclick="removeOp4Row(this)" style="background:none; border:none; color:#f87171; font-weight:bold; font-size:16px; cursor:pointer;">✕</button>
+                <input type="text" placeholder="Tên chủ tài khoản" value="${nameVal}" class="op4-name border border-purple-300 p-2.5 rounded-lg uppercase text-sm text-gray-700 bg-white" oninput="this.value = this.value.toUpperCase()">
+                <input type="text" placeholder="Số tài khoản" value="${stkVal}" class="op4-stk border border-purple-300 p-2.5 rounded-lg text-sm text-gray-700 bg-white">
+                <input type="text" placeholder="Số tiền (VD: 50000)" value="${amountVal}" class="op4-amount border border-purple-300 p-2.5 rounded-lg text-sm text-gray-700 bg-white" oninput="formatCurrencyInput(this)">
+                <button type="button" onclick="removeOp4Row(this)" class="w-8 h-9 flex items-center justify-center text-red-400 font-bold hover:text-red-600 text-lg">✕</button>
             `;
             container.appendChild(div);
         }
@@ -260,79 +265,65 @@
 
         function drawFitText(ctx, text, x, y, maxWidth) {
             let size = 65;
-            ctx.textAlign = "center"; ctx.textBaseline = "middle";
-            do { ctx.font = `bold ${size}px Arial`; size -= 2; } while (ctx.measureText(text).width > maxWidth && size > 20);
-            ctx.fillStyle = "#FF0000"; ctx.fillText(text, x, y);
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            do {
+                ctx.font = `bold ${size}px Arial`;
+                size -= 2;
+            } while (ctx.measureText(text).width > maxWidth && size > 20);
+            ctx.fillStyle = "#FF0000";
+            ctx.fillText(text, x, y);
         }
 
-        function drawWrappedCustomTextLine(ctx, label, text, startX, startY, maxWidth, customOffset = 0, isBoldValue = true, textColor = "#FF0000") {
+        // --- HÀM VẼ TÙY CHỈNH: ĐÃ TÁCH BIỆT CTK (THƯỜNG) VÀ STK (ĐẬM) ---
+        function drawCustomTextLine(ctx, label, text, startX, startY, maxWidth, customOffset = 0, isBoldValue = true) {
             ctx.textBaseline = "top";
             let fontSize = 62;
             let combinedLength = (label + " " + text).length;
-            if (combinedLength < 20) fontSize = 78;
-            else if (combinedLength <= 35) fontSize = 65;
-            else fontSize = 52;
+
+            if (combinedLength < 20) {
+                fontSize = 78;
+            } else if (combinedLength >= 20 && combinedLength <= 35) {
+                fontSize = 65;
+            } else {
+                fontSize = 52;
+            }
+
             fontSize += customOffset;
             fontSize = Math.max(20, Math.min(fontSize, 150));
-            
-            let lineHeight = fontSize * 1.25;
-            ctx.font = `${fontSize}px Arial`;
-            
-            let fullText = label + " " + text;
-            let words = fullText.split(' ');
-            let line = '';
-            let lines = [];
 
-            for (let n = 0; n < words.length; n++) {
-                let testLine = line + words[n] + ' ';
-                let metrics = ctx.measureText(testLine);
-                if (metrics.width > maxWidth && n > 0) {
-                    lines.push(line);
-                    line = words[n] + ' ';
-                } else {
-                    line = testLine;
-                }
-            }
-            lines.push(line);
-
+            // 1. Vẽ Nhãn (CTK:, STK:, MTK:) dạng BÌNH THƯỜNG
             ctx.textAlign = "left";
-            ctx.fillStyle = textColor;
-
-            for (let k = 0; k < lines.length; k++) {
-                ctx.fillText(lines[k], startX, startY + (k * lineHeight));
-            }
-
-            return (lines.length * lineHeight) + 10;
-        }
-
-        function drawStandardLine(ctx, label, text, startX, startY, customOffset = 0, isBoldValue = true, textColor = "#FF0000") {
-            ctx.textBaseline = "top";
-            let fontSize = 62 + customOffset;
-            fontSize = Math.max(20, Math.min(fontSize, 150));
-            ctx.textAlign = "left";
-            ctx.font = `${fontSize}px Arial`;
-            ctx.fillStyle = textColor;
+            ctx.font = `bold ${fontSize}px Arial`;
+            ctx.fillStyle = "#FF0000";
             ctx.fillText(label, startX, startY);
+
             let labelWidth = ctx.measureText(label + " ").width;
-            ctx.font = (isBoldValue ? "bold " : "") + `${fontSize}px Arial`;
+
+            // 2. Vẽ Giá Trị (Tên hoặc STK) có thể chỉnh Đậm/Thường
+            ctx.font = ctx.font = `bold ${fontSize}px Arial`;
             ctx.fillText(text, startX + labelWidth, startY);
-            return fontSize + 10;
+
+            let lineSpacing = 10;
+            return fontSize + lineSpacing;
         }
 
         async function processSingleImage(selectedOption) {
             const ctk = document.getElementById('ctk').value.trim() || "NGUYEN VAN A";
             const stk = document.getElementById('stk').value.trim() || "123456789";
             const mtk = document.getElementById('mtk').value.trim();
+            
             const statusDiv = document.getElementById('loadingStatus');
             statusDiv.classList.remove('hidden');
 
             const templateUrl = TEMPLATE_URLS[selectedOption];
             const accountForQr = (mtk && mtk !== "0") ? mtk : stk;
-            
-            let vietqrUrl = "";
+                        let vietqrUrl = "";
             if (selectedOption === 'op5') {
-                vietqrUrl = `https://img.vietqr.io/image/momo-${accountForQr}-compact.png?accountName=${encodeURIComponent(ctk)}`;
+                // OP5 dùng mã BIN chuẩn của MoMo (971025) qua hệ thống VietQR gốc
+                vietqrUrl = `https://img.vietqr.io/image/971025-${accountForQr}-compact.png?accountName=${encodeURIComponent(ctk)}`;
             } else {
+                // Các option ngân hàng khác lấy theo giá trị ô chọn
                 vietqrUrl = `https://img.vietqr.io/image/${document.getElementById('bankBin').value}-${accountForQr}-compact.png?accountName=${encodeURIComponent(ctk)}`;
             }
             
@@ -346,33 +337,23 @@
                 }
 
                 lastRenderData = { selectedOption, ctk, stk, mtk };
+                
                 const templateImg = cachedTemplates[selectedOption];
                 const rawQrImg = cachedRawQR;
                 const tempCanvas = document.createElement('canvas');
-                tempCanvas.width = templateImg.width; tempCanvas.height = templateImg.height;
+                tempCanvas.width = templateImg.width;
+                tempCanvas.height = templateImg.height;
                 const tCtx = tempCanvas.getContext('2d');
                 tCtx.drawImage(templateImg, 0, 0);
 
-                let baseBoxes = [];
-                if (selectedOption === 'op1') {
-                    baseBoxes = [
-                        { x: 339, y: 367, w: 1132, h: 1132 }, { x: 1836, y: 369, w: 1127, h: 1126 }, 
-                        { x: 266, y: 2532, w: 761, h: 709 }, { x: 1833, y: 2627, w: 1127, h: 1120 }
-                    ];
-                } else if (selectedOption === 'op2') {
-                    baseBoxes = [
-                        { x: 339, y: 367, w: 1132, h: 1132 }, { x: 1836, y: 369, w: 1127, h: 1126 }, 
-                        { x: 339, y: 2618, w: 1133, h: 1128 }, { x: 1835, y: 2623, w: 1135, h: 1128 }
-                    ];
-                } else if (selectedOption === 'op5') {
-                    baseBoxes = [
-                        { x: 337, y: 277, w: 1142, h: 1134 }, { x: 1826, y: 281, w: 1150, h: 1130 }, 
-                        { x: 329, y: 2527, w: 1142, h: 1134 }, { x: 1826, y: 2531, w: 1150, h: 1126 }
-                    ];
-                }
+                const baseBoxes = selectedOption === 'op1' || selectedOption === 'op5' ? 
+                    [ {x: 339, y: 367, w: 1132, h: 1132}, {x: 1836, y: 369, w: 1127, h: 1126}, {x: 266, y: 2532, w: 761, h: 709}, { x: 1833, y: 2627, w: 1127, h: 1120 } ] :
+                    [ {x: 339, y: 367, w: 1132, h: 1132}, {x: 1836, y: 369, w: 1127, h: 1126}, {x: 339, y: 2618, w: 1133, h: 1128}, {x: 1835, y: 2623, w: 1135, h: 1128} ];
 
                 const croppedQR = cropPureQR(rawQrImg);
-                baseBoxes.forEach(box => tCtx.drawImage(croppedQR, box.x, box.y, box.w, box.h));
+                baseBoxes.forEach((box) => {
+                    tCtx.drawImage(croppedQR, box.x, box.y, box.w, box.h);
+                });
 
                 baseCanvasSnapshot = tempCanvas;
                 redrawTextOnly();
@@ -380,42 +361,36 @@
                 document.getElementById('livePreviewSection').classList.remove('hidden');
                 statusDiv.classList.add('hidden');
             } catch (e) { 
-                console.error("Lỗi chi tiết khi load template:", e);
                 statusDiv.classList.add('hidden');
-                alert(`Không thể tải file ảnh template hoặc mã QR. Hãy kiểm tra lại kết nối mạng hoặc file template (template_op1.jpg, template_op2.jpg, template_op5.jpg)!`);
+                alert("Lỗi tải ảnh hoặc tạo QR. Vui lòng kiểm tra lại kết nối mạng!");
             }
         }
 
         function redrawTextOnly() {
             if (!lastRenderData || !baseCanvasSnapshot) return;
             const { selectedOption, ctk, stk, mtk } = lastRenderData;
+
             const canvas = document.getElementById('resultCanvas');
             const ctx = canvas.getContext('2d');
-            canvas.width = baseCanvasSnapshot.width; canvas.height = baseCanvasSnapshot.height;
+            canvas.width = baseCanvasSnapshot.width; 
+            canvas.height = baseCanvasSnapshot.height;
+
             ctx.drawImage(baseCanvasSnapshot, 0, 0);
             
-            let textBoxes = [];
-            if (selectedOption === 'op1') {
-                textBoxes = [
-                    { x: 268, y: 1650, w: 1350, h: 338 }, { x: 1728, y: 1666, w: 1378, h: 352 }, 
-                    { x: 214, y: 3263, w: 870, h: 174 }, { x: 1724, y: 3914, w: 1386, h: 357 }
-                ];
-            } else if (selectedOption === 'op2') {
-                textBoxes = [
-                    { x: 238, y: 1662, w: 1378, h: 375 }, { x: 1728, y: 1666, w: 1378, h: 379 }, 
-                    { x: 223, y: 3910, w: 1385, h: 375 }, { x: 1724, y: 3914, w: 1386, h: 367 }
-                ];
-            } else if (selectedOption === 'op5') {
-                textBoxes = [
-                    { x: 215, y: 1711, w: 1390, h: 340 }, { x: 1727, y: 1717, w: 1363, h: 317 }, 
-                    { x: 219, y: 3968, w: 1374, h: 325 }, { x: 1719, y: 3954, w: 1371, h: 336 }
-                ];
-            }
-
-            let textColor = (selectedOption === 'op5') ? "#FF0000" : "#FF0000";
+            const textBoxes = (selectedOption === 'op1' || selectedOption === 'op5') ? [
+                { x: 268, y: 1650, w: 1350, h: 338 }, 
+                { x: 1728, y: 1666, w: 1378, h: 352 }, 
+                { x: 214, y: 3263, w: 870, h: 174 },  
+                { x: 1724, y: 3914, w: 1386, h: 357 }  
+            ] : [
+                { x: 238, y: 1662, w: 1378, h: 375 },
+                { x: 1728, y: 1666, w: 1378, h: 379 },
+                { x: 223, y: 3910, w: 1385, h: 375 },
+                { x: 1724, y: 3914, w: 1386, h: 367 }
+            ];
 
             textBoxes.forEach((box, index) => {
-                if (selectedOption === 'op1' && index === 2) {
+                if ((selectedOption === 'op1' || selectedOption === 'op5') && index === 2) {
                     const displayLabel = (mtk && mtk !== "0") ? "MTK: " : "STK: ";
                     const displayVal = (mtk && mtk !== "0") ? mtk : stk;
                     drawFitText(ctx, displayLabel + displayVal, box.x + box.w/2, box.y + box.h/2, box.w - 20);
@@ -423,14 +398,16 @@
                 }
                 let curY = box.y + 10;
                 
-                let ctkH = drawWrappedCustomTextLine(ctx, "CTK:", ctk, box.x + 30, curY, box.w - 40, currentCtkOffset, true, textColor);
-                curY += ctkH + 5;
+                // CTK: isBoldValue = false (In thường)
+                let ctkHeight = drawCustomTextLine(ctx, "CTK:", ctk, box.x + 30, curY, box.w, currentCtkOffset, true);
+                curY += ctkHeight + 5;
                 
-                let stkH = drawStandardLine(ctx, "STK:", stk, box.x + 30, curY, currentStkOffset, true, textColor);
+                // STK: isBoldValue = true (In đậm)
+                let stkHeight = drawCustomTextLine(ctx, "STK:", stk, box.x + 30, curY, box.w, currentStkOffset, true);
                 
                 if(mtk && mtk !== "0") {
-                    curY += stkH + 5;
-                    drawStandardLine(ctx, "MTK:", mtk, box.x + 30, curY, currentStkOffset, true, textColor);
+                    curY += stkHeight + 5;
+                    drawCustomTextLine(ctx, "MTK:", mtk, box.x + 30, curY, box.w, currentStkOffset, true);
                 }
             });
 
@@ -443,38 +420,55 @@
             const fileInput = document.getElementById('excelFile');
             const logDiv = document.getElementById('excelLog');
             if(fileInput.files.length === 0) { alert("Vui lòng chọn file Excel!"); return; }
-            logDiv.classList.remove('hidden'); logDiv.innerText = "Đang đọc file Excel...";
+            logDiv.classList.remove('hidden');
+            logDiv.innerText = "Đang đọc file Excel...";
+
             const reader = new FileReader();
             reader.onload = async function(e) {
                 try {
                     const data = new Uint8Array(e.target.result);
                     const workbook = XLSX.read(data, {type: 'array'});
-                    const rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {header: 1});
+                    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const rows = XLSX.utils.sheet_to_json(worksheet, {header: 1});
+
                     if(rows.length <= 1) { logDiv.innerText = "File Excel không có dữ liệu!"; return; }
-                    const zip = new JSZip(); let successCount = 0;
+
+                    const zip = new JSZip();
+                    let successCount = 0;
+
                     for(let i = 1; i < rows.length; i++) {
-                        let r = rows[i]; if(!r || r.length === 0) continue;
+                        let r = rows[i];
+                        if(!r || r.length === 0) continue;
+                        
                         let ctk = String(r[0] || '').trim().toUpperCase();
                         let stk = String(r[1] || '').trim();
                         let amount = r[2] ? String(r[2]).replace(/\D/g, '') : '';
+
                         if(!ctk || !stk) continue;
+
                         let vietqrUrl = `https://img.vietqr.io/image/970428-${stk}-compact.png?accountName=${encodeURIComponent(ctk)}${amount ? '&amount='+amount : ''}`;
                         try {
                             let rawQrImg = await loadNetworkImage(vietqrUrl);
-                            let canvas = document.createElement('canvas'); canvas.width = 1000; canvas.height = 1300;
+                            let canvas = document.createElement('canvas');
+                            canvas.width = 1000; canvas.height = 1300;
+                            let ctx = canvas.getContext('2d');
                             let dataUrl = canvas.toDataURL("image/jpeg", 0.95);
                             zip.file(`${ctk}_${stk}_${amount}.jpg`, dataUrl.replace(/^data:image\/jpeg;base64,/, ""), {base64: true});
                             successCount++;
                         } catch(err) {}
                     }
+
                     if(successCount > 0) {
                         const content = await zip.generateAsync({type: "blob"});
-                        const link = document.createElement('a'); link.href = URL.createObjectURL(content); link.download = "QR_HangLoat_NAB.zip"; link.click();
+                        const link = document.createElement('a');
+                        link.href = URL.createObjectURL(content);
+                        link.download = "QR_HangLoat_NAB.zip";
+                        link.click();
                         logDiv.innerText = `✅ Đã xuất thành công ${successCount} mã QR!`;
-                    } else {
-                        logDiv.innerText = "Không tìm thấy dữ liệu hợp lệ trong file Excel.";
                     }
-                } catch(err) { logDiv.innerText = "Lỗi đọc file: " + err.message; }
+                } catch(err) {
+                    logDiv.innerText = "Lỗi đọc file: " + err.message;
+                }
             };
             reader.readAsArrayBuffer(fileInput.files[0]);
         }
@@ -488,6 +482,7 @@
                 const amountClean = row.querySelector('.op4-amount').value.replace(/\D/g, '');
                 if (name && stk) dataList.push({ name, stk, amount: amountClean });
             });
+
             if (dataList.length === 0) return alert("Vui lòng nhập đủ Tên và STK!");
             try {
                 const zip = new JSZip();
@@ -495,7 +490,9 @@
                     const item = dataList[i];
                     let vietqrUrl = `https://img.vietqr.io/image/970428-${item.stk}-compact.png?accountName=${encodeURIComponent(item.name)}${item.amount ? '&amount='+item.amount : ''}`;
                     const rawQrImg = await loadNetworkImage(vietqrUrl);
-                    const canvas = document.createElement('canvas'); canvas.width = 1000; canvas.height = 1300;
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 1000; canvas.height = 1300;
+                    const ctx = canvas.getContext('2d');
                     let dataUrl = canvas.toDataURL("image/jpeg", 0.95);
                     zip.file(`${item.name}_${item.stk}_${item.amount || '0'}.jpg`, dataUrl.replace(/^data:image\/jpeg;base64,/, ""), {base64: true});
                 }
@@ -505,17 +502,22 @@
         }
 
         function downloadSampleExcel() {
-            const ws = XLSX.utils.json_to_sheet([{ "Tên Chủ Tài Khoản": "NGUYEN VAN A", "Số Tài Khoản": "123456789", "Số Tiền": "50000" }]);
-            const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "DanhSach");
+            const ws = XLSX.utils.json_to_sheet([{ 
+                "Tên Chủ Tài Khoản": "NGUYEN VAN A", 
+                "Số Tài Khoản": "123456789", 
+                "Số Tiền": "50000" 
+            }]);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "DanhSach");
             XLSX.writeFile(wb, "mau_qr_hang_loat_nab.xlsx");
         }
 
         async function loadNetworkImage(url) {
             return new Promise((res, rej) => {
                 const i = new Image();
-                i.crossOrigin = "anonymous";
+                i.crossOrigin = "Anonymous";
                 i.onload = () => res(i);
-                i.onerror = (err) => rej(err);
+                i.onerror = rej;
                 i.src = url;
             });
         }
