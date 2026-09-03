@@ -396,7 +396,21 @@
                     drawFitText(ctx, displayLabel + displayVal, box.x + box.w/2, box.y + box.h/2, box.w - 20);
                     return;
                 }
-                let curY = box.y + 10;
+                let curY;
+
+if (!mtk || mtk === "0") {
+
+    // Chỉ có CTK + STK
+
+    curY = box.y + 60;
+
+} else {
+
+    // Có CTK + STK + MTK
+
+    curY = box.y + 10;
+
+}
                 
                 // CTK: isBoldValue = false (In thường)
                 let ctkHeight = drawCustomTextLine(ctx, "CTK:", ctk, box.x + 30, curY, box.w, currentCtkOffset, true);
