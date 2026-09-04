@@ -207,15 +207,6 @@
             else if (opt === 'op2') btn.innerText = "✨ Tạo Mã QR & Xem Trước (OP2 - MICA FULL)";
             else if (opt === 'op3') btn.innerText = "📦 Xuất File Hàng Loạt (OP3 - Excel)";
             else btn.innerText = "📦 Xuất File Định Mức (OP4 - Nhập Tay)";
-        if (opt === 'op3' || opt === 'op4') {
-    document.getElementById('livePreviewSection').classList.add('hidden');
-
-    const canvas = document.getElementById('resultCanvas');
-    const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    baseCanvasSnapshot = null;
-    lastRenderData = null;
         }
 
         function handleSliderDebounce(type, val) {
