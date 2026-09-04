@@ -3,10 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
     <title>Phần Mềm Tạo QR - Nam A Bank</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js?v=1"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
         * { box-sizing: border-box; }
@@ -276,7 +278,7 @@
             fontSize = Math.max(20, Math.min(fontSize, 150));
             
             let lineHeight = fontSize * 1.25;
-            ctx.font = `${fontSize}px Arial`;
+            ctx.font = `bold ${fontSize}px Arial`;
             
             let fullText = label + " " + text;
             let words = fullText.split(' ');
@@ -310,11 +312,11 @@
             let fontSize = 62 + customOffset;
             fontSize = Math.max(20, Math.min(fontSize, 150));
             ctx.textAlign = "left";
-            ctx.font = `${fontSize}px Arial`;
+            ctx.font = `bold ${fontSize}px Arial`;
             ctx.fillStyle = textColor;
             ctx.fillText(label, startX, startY);
             let labelWidth = ctx.measureText(label + " ").width;
-            ctx.font = (isBoldValue ? "bold " : "") + `${fontSize}px Arial`;
+            ctx.font = `bold ${fontSize}px Arial`;
             ctx.fillText(text, startX + labelWidth, startY);
             return fontSize + 10;
         }
