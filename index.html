@@ -3,14 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Phần Mềm Tạo QR - Nam A Bank</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js?v=1"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <!-- Thêm thư viện QRCodeJS để hỗ trợ vẽ QR code canvas cho OP3 và OP4 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         * { box-sizing: border-box; }
@@ -386,7 +385,7 @@
             } catch (e) { 
                 console.error("Lỗi chi tiết khi load template:", e);
                 statusDiv.classList.add('hidden');
-                alert(`Không thể tải file ảnh template hoặc mã QR. Hãy kiểm tra lại kết nối mạng hoặc file template (template_op1.jpg, template_op2.jpg, template_op5.jpg)!`);
+                alert(`Không thể tải file ảnh template hoặc mã QR. Hãy kiểm tra lại kết nối mạng hoặc file template!`);
             }
         }
 
@@ -416,7 +415,7 @@
                 ];
             }
 
-            let textColor = (selectedOption === 'op5') ? "#FF0000" : "#FF0000";
+            let textColor = "#FF0000";
 
             textBoxes.forEach((box, index) => {
                 if (selectedOption === 'op1' && index === 2) {
@@ -443,38 +442,6 @@
             document.getElementById('pdfBtn').classList.remove('hidden');
         }
 
-        // Hỗ trợ tạo mã QR canvas cho OP3 và OP4
-        function generateQRSnippet(text) {
-            return new Promise((resolve) => {
-                let tempDiv = document.createElement('div');
-                new QRCode(tempDiv, {
-                    text: text,
-                    width: 250,
-                    height: 250,
-                    colorDark: "#000000",
-                    colorLight: "#ffffff",
-                    correctLevel: QRCode.CorrectLevel.H
-                });
-                setTimeout(() => {
-                    let qrImg = tempDiv.querySelector('img') || tempDiv.querySelector('canvas');
-                    if (qrImg.tagName === 'CANVAS') {
-                        resolve(qrImg);
-                    } else {
-                        let canvas = document.createElement('canvas');
-                        canvas.width = 250;
-                        canvas.height = 250;
-                        let ctx = canvas.getContext('2d');
-                        let img = new Image();
-                        img.onload = () => {
-                            ctx.drawImage(img, 0, 0);
-                            resolve(canvas);
-                        };
-                        img.src = qrImg.src;
-                    }
-                }, 50);
-            });
-        }
-
         async function processExcelBatch() {
             const fileInput = document.getElementById('excelFile');
             const logDiv = document.getElementById('excelLog');
@@ -494,12 +461,12 @@
                         let r = rows[i]; if(!r || r.length === 0) continue;
                         let ctk = String(r[0] || '').trim().toUpperCase();
                         let stk = String(r[1] || '').trim();
-                        let amount = r[2] ? String(r[2]).replace(/\D/g, '') : '';
+                        let amount = r[2] ? String(r[2]).replace(/\D/g, '') : '0';
                         if(!ctk || !stk) continue;
                         
                         let canvas = document.createElement('canvas');
                         canvas.width = 800;
-                        canvas.height = 1000;
+                        canvas.height = 1050;
                         let ctx = canvas.getContext('2d');
 
                         ctx.fillStyle = "#ffffff";
@@ -513,33 +480,44 @@
                         ctx.textAlign = "center";
                         ctx.fillText("THÔNG TIN THANH TOÁN", canvas.width / 2, 110);
 
-                        ctx.textAlign = "left";
-                        ctx.font = "24px Arial";
-                        ctx.fillStyle = "#333333";
-
                         let startX = 100;
                         let startY = 180;
-                        let lineHeight = 50;
+                        let lineHeight = 45;
 
-                        ctx.fillText("Họ tên:", startX, startY);
+                        ctx.textAlign = "left";
+                        ctx.font = "24px Arial";
+                        ctx.fillStyle = "#555555";
+                        ctx.fillText("Ngân hàng:", startX, startY);
                         ctx.font = "bold 24px Arial";
-                        ctx.fillText(ctk, startX + 180, startY);
+                        ctx.fillStyle = "#111111";
+                        ctx.fillText("Nam A Bank", startX + 180, startY);
 
                         ctx.font = "24px Arial";
-                        ctx.fillText("Số tài khoản:", startX, startY + lineHeight);
+                        ctx.fillStyle = "#555555";
+                        ctx.fillText("Chủ TK:", startX, startY + lineHeight);
                         ctx.font = "bold 24px Arial";
-                        ctx.fillText(stk, startX + 180, startY + lineHeight);
+                        ctx.fillStyle = "#111111";
+                        ctx.fillText(ctk, startX + 180, startY + lineHeight);
 
                         ctx.font = "24px Arial";
-                        ctx.fillText("Số tiền:", startX, startY + lineHeight * 2);
+                        ctx.fillStyle = "#555555";
+                        ctx.fillText("Số tài khoản:", startX, startY + lineHeight * 2);
+                        ctx.font = "bold 24px Arial";
+                        ctx.fillStyle = "#111111";
+                        ctx.fillText(stk, startX + 180, startY + lineHeight * 2);
+
+                        ctx.font = "24px Arial";
+                        ctx.fillStyle = "#555555";
+                        ctx.fillText("Số tiền:", startX, startY + lineHeight * 3);
                         ctx.font = "bold 28px Arial";
                         ctx.fillStyle = "#dc2626";
-                        ctx.fillText(amount ? Number(amount).toLocaleString('vi-VN') + " VNĐ" : "0 VNĐ", startX + 180, startY + lineHeight * 2);
+                        ctx.fillText(Number(amount).toLocaleString('vi-VN') + " VNĐ", startX + 180, startY + lineHeight * 3);
 
-                        let qrData = `https://img.vietqr.io/image/970428-${stk}-compact2.png?amount=${amount || 0}&accountName=${encodeURIComponent(ctk)}`;
-                        let qrCanvas = await generateQRSnippet(qrData);
+                        // Gọi trực tiếp ảnh QR chuyển khoản chuẩn từ VietQR API
+                        let vietqrUrl = `https://img.vietqr.io/image/970428-${stk}-compact.png?amount=${amount}&accountName=${encodeURIComponent(ctk)}`;
+                        let qrImg = await loadNetworkImage(vietqrUrl);
 
-                        let qrSize = 300;
+                        let qrSize = 280;
                         let qrX = (canvas.width - qrSize) / 2;
                         let qrY = 460;
                         
@@ -549,12 +527,12 @@
                         ctx.lineWidth = 2;
                         ctx.strokeRect(qrX - 20, qrY - 20, qrSize + 40, qrSize + 40);
 
-                        ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
+                        ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
 
                         ctx.font = "italic 18px Arial";
                         ctx.fillStyle = "#64748b";
                         ctx.textAlign = "center";
-                        ctx.fillText("Quét mã QR bằng ứng dụng ngân hàng bất kỳ để thanh toán", canvas.width / 2, 850);
+                        ctx.fillText("Quét mã QR bằng ứng dụng ngân hàng bất kỳ để thanh toán", canvas.width / 2, 810);
 
                         let dataURL = canvas.toDataURL("image/jpeg", 0.95);
                         let base64Data = dataURL.replace(/^data:image\/jpeg;base64,/, "");
@@ -582,7 +560,7 @@
                 const name = row.querySelector('.op4-name').value.trim();
                 const stk = row.querySelector('.op4-stk').value.trim();
                 const amountClean = row.querySelector('.op4-amount').value.replace(/\D/g, '');
-                if (name && stk) dataList.push({ name, stk, amount: amountClean });
+                if (name && stk) dataList.push({ name, stk, amount: amountClean || '0' });
             });
             if (dataList.length === 0) return alert("Vui lòng nhập đủ Tên và STK!");
             try {
@@ -592,7 +570,7 @@
                     const item = dataList[i];
                     let canvas = document.createElement('canvas');
                     canvas.width = 800;
-                    canvas.height = 1000;
+                    canvas.height = 1050;
                     let ctx = canvas.getContext('2d');
 
                     ctx.fillStyle = "#ffffff";
@@ -606,33 +584,44 @@
                     ctx.textAlign = "center";
                     ctx.fillText("THÔNG TIN THANH TOÁN", canvas.width / 2, 110);
 
-                    ctx.textAlign = "left";
-                    ctx.font = "24px Arial";
-                    ctx.fillStyle = "#333333";
-
                     let startX = 100;
                     let startY = 180;
-                    let lineHeight = 50;
+                    let lineHeight = 45;
 
-                    ctx.fillText("Họ tên:", startX, startY);
+                    ctx.textAlign = "left";
+                    ctx.font = "24px Arial";
+                    ctx.fillStyle = "#555555";
+                    ctx.fillText("Ngân hàng:", startX, startY);
                     ctx.font = "bold 24px Arial";
-                    ctx.fillText(item.name, startX + 180, startY);
+                    ctx.fillStyle = "#111111";
+                    ctx.fillText("Nam A Bank", startX + 180, startY);
 
                     ctx.font = "24px Arial";
-                    ctx.fillText("Số tài khoản:", startX, startY + lineHeight);
+                    ctx.fillStyle = "#555555";
+                    ctx.fillText("Chủ TK:", startX, startY + lineHeight);
                     ctx.font = "bold 24px Arial";
-                    ctx.fillText(item.stk, startX + 180, startY + lineHeight);
+                    ctx.fillStyle = "#111111";
+                    ctx.fillText(item.name, startX + 180, startY + lineHeight);
 
                     ctx.font = "24px Arial";
-                    ctx.fillText("Số tiền:", startX, startY + lineHeight * 2);
+                    ctx.fillStyle = "#555555";
+                    ctx.fillText("Số tài khoản:", startX, startY + lineHeight * 2);
+                    ctx.font = "bold 24px Arial";
+                    ctx.fillStyle = "#111111";
+                    ctx.fillText(item.stk, startX + 180, startY + lineHeight * 2);
+
+                    ctx.font = "24px Arial";
+                    ctx.fillStyle = "#555555";
+                    ctx.fillText("Số tiền:", startX, startY + lineHeight * 3);
                     ctx.font = "bold 28px Arial";
                     ctx.fillStyle = "#dc2626";
-                    ctx.fillText(item.amount ? Number(item.amount).toLocaleString('vi-VN') + " VNĐ" : "0 VNĐ", startX + 180, startY + lineHeight * 2);
+                    ctx.fillText(Number(item.amount).toLocaleString('vi-VN') + " VNĐ", startX + 180, startY + lineHeight * 3);
 
-                    let qrData = `https://img.vietqr.io/image/970428-${item.stk}-compact2.png?amount=${item.amount || 0}&accountName=${encodeURIComponent(item.name)}`;
-                    let qrCanvas = await generateQRSnippet(qrData);
+                    // Gọi trực tiếp ảnh QR chuyển khoản chuẩn từ VietQR API
+                    let vietqrUrl = `https://img.vietqr.io/image/970428-${item.stk}-compact.png?amount=${item.amount}&accountName=${encodeURIComponent(item.name)}`;
+                    let qrImg = await loadNetworkImage(vietqrUrl);
 
-                    let qrSize = 300;
+                    let qrSize = 280;
                     let qrX = (canvas.width - qrSize) / 2;
                     let qrY = 460;
                     
@@ -642,12 +631,12 @@
                     ctx.lineWidth = 2;
                     ctx.strokeRect(qrX - 20, qrY - 20, qrSize + 40, qrSize + 40);
 
-                    ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
+                    ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
 
                     ctx.font = "italic 18px Arial";
                     ctx.fillStyle = "#64748b";
                     ctx.textAlign = "center";
-                    ctx.fillText("Quét mã QR bằng ứng dụng ngân hàng bất kỳ để thanh toán", canvas.width / 2, 850);
+                    ctx.fillText("Quét mã QR bằng ứng dụng ngân hàng bất kỳ để thanh toán", canvas.width / 2, 810);
 
                     let dataURL = canvas.toDataURL("image/jpeg", 0.95);
                     let base64Data = dataURL.replace(/^data:image\/jpeg;base64,/, "");
