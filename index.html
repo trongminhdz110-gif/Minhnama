@@ -333,11 +333,13 @@
             const accountForQr = (mtk && mtk !== "0") ? mtk : stk;
             
             let vietqrUrl = "";
+            // === THAY THẾ ĐOẠN NÀY ===
             if (selectedOption === 'op5') {
-                vietqrUrl = `https://img.vietqr.io/image/momo-${accountForQr}-compact.png?accountName=${encodeURIComponent(ctk)}`;
+                vietqrUrl = `https://vietqr.app/img?acc=${accountForQr}&bank=MoMo&accountName=${encodeURIComponent(ctk)}`;
             } else {
                 vietqrUrl = `https://img.vietqr.io/image/${document.getElementById('bankBin').value}-${accountForQr}-compact.png?accountName=${encodeURIComponent(ctk)}`;
             }
+            // =========================
             
             try {
                 if (!cachedTemplates[selectedOption]) {
