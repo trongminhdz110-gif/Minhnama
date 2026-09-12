@@ -368,9 +368,15 @@
                     stk = document.getElementById('momoStk').value.trim() || "0901234567";
                     
                     let vietqrApiUrl = `https://vietqr.app/img?acc=${stk}&bank=${code}&holder=${encodeURIComponent(ctk)}`;
-                    let qrImg = await loadNetworkImage(vietqrApiUrl);
-                    let croppedQR = cropPureQR(qrImg);
-                    baseBoxes.forEach(box => tCtx.drawImage(croppedQR, box.x, box.y, box.w, box.h));
+let qrImg = await new Promise((resolve, reject) => {
+    let img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => resolve(img);
+    img.onerror = (err) => reject(err);
+    img.src = vietqrApiUrl;
+});
+let croppedQR = cropPureQR(qrImg);
+baseBoxes.forEach(box => tCtx.drawImage(croppedQR, box.x, box.y, box.w, box.h));
                 } else {
                     ctk = document.getElementById('ctk').value.trim() || "NGUYEN VAN A";
                     stk = document.getElementById('stk').value.trim() || "123456789";
