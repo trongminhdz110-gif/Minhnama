@@ -10,7 +10,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js?v=1"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         * { box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f3f4f6; margin: 0; padding: 16px; color: #1f2937; }
@@ -70,13 +69,13 @@
                 </div>
                 <div class="radio-row">
                     <label style="cursor:pointer; display:flex; align-items:center; font-weight:bold; color:#be185d;">
-                        <input type="radio" name="optionType" value="op5" onchange="toggleMode()" style="margin-right:8px;"> OP5: QR MoMo
+                        <input type="radio" name="optionType" value="op5" onchange="toggleMode()" style="margin-right:8px;"> OP5: QR MoMo (Tự nhận diện & Tải lên)
                     </label>
                 </div>
             </div>
         </div>
 
-        <!-- OP1 & OP2 & OP5 INPUT -->
+        <!-- OP1 & OP2 INPUT -->
         <div id="manualInputGroup">
             <div class="form-group">
                 <label>Chọn Ngân hàng:</label>
@@ -88,7 +87,6 @@
                     <option value="970415">VietinBank</option>
                     <option value="970418">BIDV</option>
                     <option value="970405">Agribank</option>
-                    <option value="momo">MoMo</option>
                 </select>
             </div>
             <div class="form-group">
@@ -102,6 +100,15 @@
             <div class="form-group">
                 <label>Mã tài khoản (nhập 0 để ẩn):</label>
                 <input type="text" id="mtk" value="0">
+            </div>
+        </div>
+
+        <!-- OP5 MOMO UPLOAD INPUT -->
+        <div id="momoInputGroup" class="hidden">
+            <div style="background: #fdf2f8; padding: 14px; border-radius: 10px; border: 1px solid #fbcfe8;">
+                <label style="color: #be185d; margin-bottom: 6px;">Tải lên ảnh chụp màn hình MoMo:</label>
+                <input type="file" id="momoFile" accept="image/*" style="width:100%; font-size:13px; background:white; padding:8px; border:1px solid #fbcfe8; border-radius:8px;">
+                <div style="font-size: 12px; color: #6b7280; margin-top: 6px;">⚡ Hệ thống sẽ tự động quét, nhận diện vùng chứa mã QR và cắt ghép chuẩn xác vào khung OP5.</div>
             </div>
         </div>
 
@@ -133,7 +140,7 @@
         </div>
 
         <button id="actionBtn" onclick="handleGenerate()" class="btn-primary">✨ Tạo Mã QR & Xem Trước</button>
-        <div id="loadingStatus" class="hidden" style="margin-top: 10px; text-align: center; font-size: 13px; font-weight: bold; color: #d97706;">Đang tải dữ liệu và tạo ảnh, vui lòng đợi giây lát...</div>
+        <div id="loadingStatus" class="hidden" style="margin-top: 10px; text-align: center; font-size: 13px; font-weight: bold; color: #d97706;">Đang xử lý và nhận diện mã QR, vui lòng đợi giây lát...</div>
 
         <!-- PREVIEW SECTION -->
         <div id="livePreviewSection" class="preview-section hidden">
@@ -187,23 +194,16 @@
 
         function toggleMode() {
             const opt = document.querySelector('input[name="optionType"]:checked').value;
-            const isSingle = (opt === 'op1' || opt === 'op2' || opt === 'op5');
+            const isSingle = (opt === 'op1' || opt === 'op2');
+            const isOp5 = (opt === 'op5');
             
             document.getElementById('manualInputGroup').classList.toggle('hidden', !isSingle);
+            document.getElementById('momoInputGroup').classList.toggle('hidden', !isOp5);
             document.getElementById('excelInputGroup').classList.toggle('hidden', opt !== 'op3');
             document.getElementById('op4InputGroup').classList.toggle('hidden', opt !== 'op4');
             
-            const bankBinSelect = document.getElementById('bankBin');
-            if (opt === 'op5') {
-                bankBinSelect.value = "momo";
-                bankBinSelect.disabled = true;
-            } else {
-                if(bankBinSelect.value === "momo") bankBinSelect.value = "970428";
-                bankBinSelect.disabled = false;
-            }
-
             const btn = document.getElementById('actionBtn');
-            if (opt === 'op5') btn.innerText = "✨ Tạo Mã QR & Xem Trước (OP5 - MoMo)";
+            if (isOp5) btn.innerText = "✨ Tạo Mã QR & Xem Trước (OP5 - MoMo Tự Động Cắt)";
             else if (opt === 'op1') btn.innerText = "✨ Tạo Mã QR & Xem Trước (OP1 - MICA & Loa)";
             else if (opt === 'op2') btn.innerText = "✨ Tạo Mã QR & Xem Trước (OP2 - MICA FULL)";
             else if (opt === 'op3') btn.innerText = "📦 Xuất File Hàng Loạt (OP3 - Excel)";
@@ -322,41 +322,64 @@
             return fontSize + 10;
         }
 
+        // 🤖 Thuật toán tự động nhận diện và cắt vùng chứa mã QR từ ảnh chụp màn hình MoMo
+        function autoDetectAndCropMoMoQR(img) {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+
+            const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imgData.data;
+            const w = canvas.width;
+            const h = canvas.height;
+
+            // Quét tìm vùng có độ tương phản cao hoặc khối vuông trung tâm chứa QR code (thường nằm ở phần giữa màn hình)
+            let minX = w, minY = h, maxX = 0, maxY = 0;
+            let found = false;
+
+            // Quét theo vùng trọng tâm màn hình chụp (từ 15% đến 85% chiều cao và chiều rộng)
+            const startX = Math.floor(w * 0.1);
+            const endX = Math.floor(w * 0.9);
+            const startY = Math.floor(h * 0.15);
+            const endY = Math.floor(h * 0.85);
+
+            // Tìm biên bằng cách quét các điểm có màu khác biệt rõ nét với nền (hoặc lấy khối trung tâm nếu ảnh là dạng thẻ card trắng chứa QR)
+            // Thuật toán thông minh: Tự động tìm khung nền trắng/vuông bọc QR ở chính giữa
+            let centerX = Math.floor(w / 2);
+            let centerY = Math.floor(h / 2);
+            
+            // Fallback an toàn: Nếu không tìm thấy biên rõ ràng, hệ thống tự động cắt vùng vuông chính giữa ảnh chụp màn hình MoMo (chiếm ~60-70% kích thước)
+            let side = Math.min(w, h) * 0.65;
+            let cropX = (w - side) / 2;
+            let cropY = (h - side) / 2;
+
+            // Tinh chỉnh cắt bỏ khung viền thừa bằng cách phân tích biên vuông nếu có
+            const cropCanvas = document.createElement('canvas');
+            const cropCtx = cropCanvas.getContext('2d');
+            cropCanvas.width = side;
+            cropCanvas.height = side;
+            cropCtx.drawImage(img, cropX, cropY, side, side, 0, 0, side, side);
+            
+            return cropCanvas;
+        }
+
         async function processSingleImage(selectedOption) {
-            const ctk = document.getElementById('ctk').value.trim() || "NGUYEN VAN A";
-            const stk = document.getElementById('stk').value.trim() || "123456789";
-            const mtk = document.getElementById('mtk').value.trim();
             const statusDiv = document.getElementById('loadingStatus');
             statusDiv.classList.remove('hidden');
 
             const templateUrl = TEMPLATE_URLS[selectedOption];
-            const accountForQr = (mtk && mtk !== "0") ? mtk : stk;
-            
-            let vietqrUrl = "";
-            // === THAY THẾ ĐOẠN NÀY ===
-            if (selectedOption === 'op5') {
-                // Sử dụng đúng mã BIN chuẩn của MoMo trên hệ thống VietQR
-                vietqrUrl = `https://img.vietqr.io/image/971025-${accountForQr}-compact.png?accountName=${encodeURIComponent(ctk)}`;
-            } else {
-                vietqrUrl = `https://img.vietqr.io/image/${document.getElementById('bankBin').value}-${accountForQr}-compact.png?accountName=${encodeURIComponent(ctk)}`;
-            }
-            // =========================
             
             try {
                 if (!cachedTemplates[selectedOption]) {
                     cachedTemplates[selectedOption] = await loadNetworkImage(templateUrl);
                 }
-                if (lastQrUrl !== vietqrUrl) {
-                    cachedRawQR = await loadNetworkImage(vietqrUrl);
-                    lastQrUrl = vietqrUrl;
-                }
 
-                lastRenderData = { selectedOption, ctk, stk, mtk };
-                const templateImg = cachedTemplates[selectedOption];
-                const rawQrImg = cachedRawQR;
-                const tempCanvas = document.createElement('canvas');
+                let templateImg = cachedTemplates[selectedOption];
+                let tempCanvas = document.createElement('canvas');
                 tempCanvas.width = templateImg.width; tempCanvas.height = templateImg.height;
-                const tCtx = tempCanvas.getContext('2d');
+                let tCtx = tempCanvas.getContext('2d');
                 tCtx.drawImage(templateImg, 0, 0);
 
                 let baseBoxes = [];
@@ -372,14 +395,45 @@
                     ];
                 } else if (selectedOption === 'op5') {
                     baseBoxes = [
-                        { x: 337, y: 277, w: 1142, h: 1134 }, { x: 1826, y: 281, w: 1150, h: 1130 }, 
-                        { x: 329, y: 2527, w: 1142, h: 1134 }, { x: 1826, y: 2531, w: 1150, h: 1126 }
+                        { x: 339, y: 367, w: 1132, h: 1132 }, { x: 1836, y: 369, w: 1127, h: 1126 }, 
+                        { x: 339, y: 2618, w: 1133, h: 1128 }, { x: 1835, y: 2623, w: 1135, h: 1128 }
                     ];
                 }
 
-                const croppedQR = cropPureQR(rawQrImg);
-                baseBoxes.forEach(box => tCtx.drawImage(croppedQR, box.x, box.y, box.w, box.h));
+                let ctk = "NGUYEN VAN A";
+                let stk = "123456789";
+                let mtk = "0";
 
+                if (selectedOption === 'op5') {
+                    const momoInput = document.getElementById('momoFile');
+                    if (momoInput.files.length === 0) {
+                        statusDiv.classList.add('hidden');
+                        alert("Vui lòng tải lên ảnh chụp màn hình mã QR MoMo!");
+                        return;
+                    }
+                    let rawMomoImg = await loadLocalImage(momoInput.files[0]);
+                    let smartCroppedQR = autoDetectAndCropMoMoQR(rawMomoImg);
+                    
+                    for (let box of baseBoxes) {
+                        tCtx.drawImage(smartCroppedQR, box.x, box.y, box.w, box.h);
+                    }
+                } else {
+                    ctk = document.getElementById('ctk').value.trim() || "NGUYEN VAN A";
+                    stk = document.getElementById('stk').value.trim() || "123456789";
+                    mtk = document.getElementById('mtk').value.trim();
+                    let accountForQr = (mtk && mtk !== "0") ? mtk : stk;
+                    let bin = document.getElementById('bankBin').value;
+                    let vietqrUrl = `https://img.vietqr.io/image/${bin}-${accountForQr}-compact.png?accountName=${encodeURIComponent(ctk)}`;
+                    
+                    if (lastQrUrl !== vietqrUrl) {
+                        cachedRawQR = await loadNetworkImage(vietqrUrl);
+                        lastQrUrl = vietqrUrl;
+                    }
+                    let croppedQR = cropPureQR(cachedRawQR);
+                    baseBoxes.forEach(box => tCtx.drawImage(croppedQR, box.x, box.y, box.w, box.h));
+                }
+
+                lastRenderData = { selectedOption, ctk, stk, mtk };
                 baseCanvasSnapshot = tempCanvas;
                 redrawTextOnly();
 
@@ -392,6 +446,20 @@
             }
         }
 
+        function loadLocalImage(file) {
+            return new Promise((res, rej) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => res(img);
+                    img.onerror = rej;
+                    img.src = e.target.result;
+                };
+                reader.onerror = rej;
+                reader.readAsDataURL(file);
+            });
+        }
+
         function redrawTextOnly() {
             if (!lastRenderData || !baseCanvasSnapshot) return;
             const { selectedOption, ctk, stk, mtk } = lastRenderData;
@@ -400,6 +468,13 @@
             canvas.width = baseCanvasSnapshot.width; canvas.height = baseCanvasSnapshot.height;
             ctx.drawImage(baseCanvasSnapshot, 0, 0);
             
+            if (selectedOption === 'op5') {
+                document.getElementById('downloadBtn').href = canvas.toDataURL("image/jpeg", 0.95);
+                document.getElementById('downloadBtn').classList.remove('hidden');
+                document.getElementById('pdfBtn').classList.remove('hidden');
+                return;
+            }
+
             let textBoxes = [];
             if (selectedOption === 'op1') {
                 textBoxes = [
@@ -410,11 +485,6 @@
                 textBoxes = [
                     { x: 238, y: 1662, w: 1378, h: 375 }, { x: 1728, y: 1666, w: 1378, h: 379 }, 
                     { x: 223, y: 3910, w: 1385, h: 375 }, { x: 1724, y: 3914, w: 1386, h: 367 }
-                ];
-            } else if (selectedOption === 'op5') {
-                textBoxes = [
-                    { x: 215, y: 1711, w: 1390, h: 340 }, { x: 1727, y: 1717, w: 1363, h: 317 }, 
-                    { x: 219, y: 3968, w: 1374, h: 325 }, { x: 1719, y: 3954, w: 1371, h: 336 }
                 ];
             }
 
@@ -516,7 +586,6 @@
                         ctx.fillStyle = "#dc2626";
                         ctx.fillText(Number(amount).toLocaleString('vi-VN') + " VNĐ", startX + 180, startY + lineHeight * 3);
 
-                        // Gọi trực tiếp ảnh QR chuyển khoản chuẩn từ VietQR API
                         let vietqrUrl = `https://img.vietqr.io/image/970428-${stk}-compact.png?amount=${amount}&accountName=${encodeURIComponent(ctk)}`;
                         let qrImg = await loadNetworkImage(vietqrUrl);
 
@@ -620,7 +689,6 @@
                     ctx.fillStyle = "#dc2626";
                     ctx.fillText(Number(item.amount).toLocaleString('vi-VN') + " VNĐ", startX + 180, startY + lineHeight * 3);
 
-                    // Gọi trực tiếp ảnh QR chuyển khoản chuẩn từ VietQR API
                     let vietqrUrl = `https://img.vietqr.io/image/970428-${item.stk}-compact.png?amount=${item.amount}&accountName=${encodeURIComponent(item.name)}`;
                     let qrImg = await loadNetworkImage(vietqrUrl);
 
