@@ -335,7 +335,8 @@
             let vietqrUrl = "";
             // === THAY THẾ ĐOẠN NÀY ===
             if (selectedOption === 'op5') {
-                vietqrUrl = `https://vietqr.app/img?acc=${accountForQr}&bank=MoMo&accountName=${encodeURIComponent(ctk)}`;
+                // Sử dụng đúng mã BIN chuẩn của MoMo trên hệ thống VietQR
+                vietqrUrl = `https://img.vietqr.io/image/971025-${accountForQr}-compact.png?accountName=${encodeURIComponent(ctk)}`;
             } else {
                 vietqrUrl = `https://img.vietqr.io/image/${document.getElementById('bankBin').value}-${accountForQr}-compact.png?accountName=${encodeURIComponent(ctk)}`;
             }
