@@ -102,7 +102,7 @@
             </div>
         </div>
 
-        <!-- OP5 MOMO API INPUT (Tên, STK, Upload & Cắt Thủ Công) -->
+        <!-- OP5 MOMO API INPUT -->
         <div id="momoInputGroup" class="hidden">
             <div style="background: #fdf2f8; padding: 14px; border-radius: 10px; border: 1px solid #fbcfe8;">
                 <div class="form-group">
@@ -118,7 +118,6 @@
                     <input type="file" id="customQrFile" accept="image/*" onchange="initCropper(this)" style="width:100%; font-size:13px; background:white; padding:8px; border:1px solid #fbcfe8; border-radius:8px;">
                 </div>
                 
-                <!-- Khung hiện ảnh để cắt thủ công -->
                 <div id="cropperContainer" class="hidden" style="margin-top: 10px; text-align: center;">
                     <div style="max-height: 300px; overflow: hidden; background: #000; border-radius: 8px;">
                         <img id="imageToCrop" style="max-width: 100%; display: block; margin: 0 auto;">
@@ -395,10 +394,16 @@
                         { x: 339, y: 367, w: 1132, h: 1132 }, { x: 1836, y: 369, w: 1127, h: 1126 }, 
                         { x: 266, y: 2532, w: 761, h: 709 }, { x: 1833, y: 2627, w: 1127, h: 1120 }
                     ];
-                } else if (selectedOption === 'op2' || selectedOption === 'op5') {
+                } else if (selectedOption === 'op2') {
                     baseBoxes = [
                         { x: 339, y: 367, w: 1132, h: 1132 }, { x: 1836, y: 369, w: 1127, h: 1126 }, 
                         { x: 339, y: 2618, w: 1133, h: 1128 }, { x: 1835, y: 2623, w: 1135, h: 1128 }
+                    ];
+                } else if (selectedOption === 'op5') {
+                    // Tọa độ chuẩn chỉnh cho khung QR của template OP5 MoMo
+                    baseBoxes = [
+                        { x: 335, y: 320, w: 1125, h: 1125 }, { x: 1832, y: 320, w: 1125, h: 1125 }, 
+                        { x: 335, y: 2570, w: 1125, h: 1125 }, { x: 1832, y: 2570, w: 1125, h: 1125 }
                     ];
                 }
 
