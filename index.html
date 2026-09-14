@@ -754,7 +754,10 @@
 
             let minX = width, minY = height, maxX = 0, maxY = 0;
 
-            for (let y = 0; y < height; y++) {
+            // Bỏ qua phần top banner logo VietQR (chiếm khoảng 22% phía trên) để không bị dư phần đầu
+            let startYScan = Math.floor(height * 0.22);
+
+            for (let y = startYScan; y < height; y++) {
                 for (let x = 0; x < width; x++) {
                     const alpha = data[(y * width + x) * 4 + 3];
                     const red = data[(y * width + x) * 4];
