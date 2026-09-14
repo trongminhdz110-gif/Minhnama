@@ -100,23 +100,16 @@
             </div>
         </div>
 
-        <!-- OP5 MOMO API INPUT (Tên, Mã, STK) -->
-        <div id="momoInputGroup" class="hidden">
-            <div style="background: #fdf2f8; padding: 14px; border-radius: 10px; border: 1px solid #fbcfe8;">
-                <div class="form-group">
-                    <label style="color: #be185d;">Tên chủ tài khoản MoMo:</label>
-                    <input type="text" id="momoCtk" oninput="this.value = this.value.toUpperCase();" placeholder="VD: NGUYEN VAN A" style="background:#fff;">
-                </div>
-                <div class="form-group">
-                    <label style="color: #be185d;">Mã (Ngân hàng / Loại):</label>
-                    <input type="text" id="momoCode" value="MoMo" placeholder="VD: MoMo" style="background:#fff;">
-                </div>
-                <div class="form-group" style="margin-bottom:0;">
-                    <label style="color: #be185d;">Số tài khoản / SĐT MoMo:</label>
-                    <input type="text" id="momoStk" placeholder="VD: 0901234567" style="background:#fff;">
-                </div>
-            </div>
-        </div>
+        <!-- OP5 MOMO CROP -->
+<div id="momoInputGroup" class="hidden">
+<div style="background:#fdf2f8;padding:14px;border-radius:10px;border:1px solid #fbcfe8;">
+<div class="form-group"><label>Tên chủ tài khoản</label><input type="text" id="momoCtk" oninput="this.value=this.value.toUpperCase()"></div>
+<div class="form-group"><label>Số tài khoản / SĐT</label><input type="text" id="momoStk"></div>
+<div class="form-group"><label>Chọn ảnh QR MoMo</label><input type="file" id="momoQrFile" accept="image/*" onchange="loadMomoQR(event)"></div>
+<canvas id="cropCanvas" width="500" height="500" style="max-width:100%;border:1px solid #ccc;"></canvas>
+<div style="margin-top:10px"><input type="range" min="0.2" max="3" step="0.1" value="1" id="zoomQr" oninput="cropScale=parseFloat(this.value);drawCropper();"></div>
+<button type="button" class="btn-secondary" onclick="confirmMomoQR()">Xác nhận QR</button>
+</div></div>
 
         <!-- OP3 EXCEL INPUT -->
         <div id="excelInputGroup" class="hidden">
@@ -188,7 +181,7 @@
         };
 
         let cachedTemplates = {};
-        let cachedRawQR = null;
+        let cachedRawQR = null; let op5CroppedQR=null; let cropImg=null; let cropX=100,cropY=100,cropSize=200,cropScale=1,dragging=false;
         let lastQrUrl = "";
         let lastRenderData = null;
         let currentCtkOffset = 0;
@@ -196,7 +189,34 @@
         let baseCanvasSnapshot = null; 
         let debounceTimer = null;
 
-        window.addEventListener('DOMContentLoaded', () => { toggleMode(); });
+        
+function loadMomoQR(e){
+const f=e.target.files[0]; if(!f)return;
+const r=new FileReader();
+r.onload=x=>{cropImg=new Image(); cropImg.onload=drawCropper; cropImg.src=x.target.result;};
+r.readAsDataURL(f);
+}
+function drawCropper(){
+const c=document.getElementById('cropCanvas'); if(!c||!cropImg)return;
+const ctx=c.getContext('2d');
+ctx.clearRect(0,0,c.width,c.height);
+const w=cropImg.width*cropScale,h=cropImg.height*cropScale;
+ctx.drawImage(cropImg,0,0,w,h);
+ctx.strokeStyle='red';ctx.lineWidth=3;ctx.strokeRect(cropX,cropY,cropSize,cropSize);
+}
+function confirmMomoQR(){
+const c=document.getElementById('cropCanvas');
+const t=document.createElement('canvas'); t.width=600;t.height=600;
+const x=(cropX/cropScale),y=(cropY/cropScale),s=(cropSize/cropScale);
+t.getContext('2d').drawImage(cropImg,x,y,s,s,0,0,600,600);
+op5CroppedQR=t;
+alert('Đã xác nhận QR');
+}
+document.addEventListener('mousedown',e=>{const c=document.getElementById('cropCanvas'); if(e.target===c) dragging=true;});
+document.addEventListener('mouseup',()=>dragging=false);
+document.addEventListener('mousemove',e=>{if(!dragging)return; cropX+=1; drawCropper();});
+
+window.addEventListener('DOMContentLoaded', () => { toggleMode(); });
 
         function toggleMode() {
             const opt = document.querySelector('input[name="optionType"]:checked').value;
