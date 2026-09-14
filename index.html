@@ -237,8 +237,9 @@
                 height: 600
             });
             croppedQRDataURL = canvas.toDataURL("image/jpeg");
-            alert("Đã cắt và lưu vùng QR thành công! Bây giờ bạn có thể bấm nút Tạo Mã QR bên dưới.");
             document.getElementById('cropperContainer').classList.add('hidden');
+            // Tự động chạy luôn hàm tạo QR ngay sau khi cắt xong để bấm 1 lần là ăn luôn!
+            handleGenerate();
         }
 
         function toggleMode() {
