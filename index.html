@@ -400,7 +400,7 @@
                         { x: 339, y: 2618, w: 1133, h: 1128 }, { x: 1835, y: 2623, w: 1135, h: 1128 }
                     ];
                 } else if (selectedOption === 'op5') {
-                    // Tọa độ chuẩn chỉnh cho khung QR của template OP5 MoMo
+                    // Tọa độ QR của OP5
                     baseBoxes = [
                         { x: 335, y: 320, w: 1125, h: 1125 }, { x: 1832, y: 320, w: 1125, h: 1125 }, 
                         { x: 335, y: 2570, w: 1125, h: 1125 }, { x: 1832, y: 2570, w: 1125, h: 1125 }
@@ -467,10 +467,16 @@
                     { x: 268, y: 1650, w: 1350, h: 338 }, { x: 1728, y: 1666, w: 1378, h: 352 }, 
                     { x: 214, y: 3263, w: 870, h: 174 }, { x: 1724, y: 3914, w: 1386, h: 357 }
                 ];
-            } else if (selectedOption === 'op2' || selectedOption === 'op5') {
+            } else if (selectedOption === 'op2') {
                 textBoxes = [
                     { x: 238, y: 1662, w: 1378, h: 375 }, { x: 1728, y: 1666, w: 1378, h: 379 }, 
                     { x: 223, y: 3910, w: 1385, h: 375 }, { x: 1724, y: 3914, w: 1386, h: 367 }
+                ];
+            } else if (selectedOption === 'op5') {
+                // Tọa độ dòng chữ riêng cho OP5 dịch xuống dưới vùng chứa logo MoMo
+                textBoxes = [
+                    { x: 238, y: 1730, w: 1378, h: 375 }, { x: 1728, y: 1730, w: 1378, h: 379 }, 
+                    { x: 223, y: 3980, w: 1385, h: 375 }, { x: 1724, y: 3980, w: 1386, h: 367 }
                 ];
             }
 
